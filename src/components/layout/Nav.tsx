@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCartStore } from '@/hooks/useCart'
@@ -14,84 +15,126 @@ const NAV_LINKS = [
   { href: '/faq',           label: 'FAQ' },
 ]
 
+function HamburgerIcon() {
+  return (
+    <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
+      <line x1="0" y1="1" x2="22" y2="1" stroke="#1C3D2E" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="0" y1="9" x2="22" y2="9" stroke="#1C3D2E" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="0" y1="17" x2="22" y2="17" stroke="#1C3D2E" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <line x1="2" y1="2" x2="18" y2="18" stroke="#1C3D2E" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="18" y1="2" x2="2" y2="18" stroke="#1C3D2E" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function Nav() {
   const { totalItems, openCart } = useCartStore()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <nav
-      className="sticky top-0 z-[100] flex items-center justify-between bg-crema"
-      style={{ padding: '18px 48px', borderBottom: '0.5px solid rgba(28,61,46,0.12)' }}
-    >
-
-      {/* Logo */}
-      <Link href="/" className="flex items-center gap-[10px] no-underline">
-        <Image src="/logo.png" alt="Mantis" width={38} height={43} />
-        <div>
-          <div className="font-serif text-[26px] font-semibold text-verde tracking-[0.14em] leading-none">
-            MANTIS
-          </div>
-          <span className="text-[9px] font-light block tracking-[0.32em] text-dorado mt-px uppercase">
-            Joyas bañadas en oro
-          </span>
-        </div>
-      </Link>
-
-      {/* Links */}
-      <div className="flex gap-6">
-        {NAV_LINKS.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className="text-[10px] tracking-[0.18em] text-verde-light no-underline uppercase transition-colors duration-200 hover:text-verde"
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Acciones */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        {/* Wishlist */}
-        <Link
-          href="/wishlist"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'none', border: 'none', cursor: 'pointer',
-            width: '36px', height: '36px',
-          }}
-          title="Favoritos"
+    <>
+      <nav
+        className="sticky top-0 z-[100] bg-crema nav-bar"
+        style={{ borderBottom: '0.5px solid rgba(28,61,46,0.12)' }}
+      >
+        {/* Hamburger — mobile only */}
+        <button
+          className="nav-hamburger"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 21C12 21 3 14 3 8a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 13-9 13z"
-              stroke="rgba(28,61,46,0.5)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+        </button>
+
+        {/* Logo */}
+        <Link href="/" className="nav-logo flex items-center gap-[10px] no-underline" onClick={() => setMenuOpen(false)}>
+          <Image src="/logo.png" alt="Mantis" width={38} height={43} style={{ filter: 'brightness(0.65) contrast(1.3) saturate(1.2)' }} />
+          <div>
+            <div className="font-serif text-[26px] font-semibold text-verde tracking-[0.14em] leading-none">
+              MANTIS
+            </div>
+            <span className="text-[9px] font-light block tracking-[0.32em] text-dorado mt-px uppercase">
+              Joyas bañadas en oro
+            </span>
+          </div>
         </Link>
 
-        {/* Carrito */}
-        <button
-          onClick={openCart}
-          style={{
-            background: '#1C3D2E',
-            color: '#F5F0E8',
-            border: 'none',
-            padding: '10px 20px',
-            fontSize: '10px',
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            fontFamily: 'var(--ff-sans)',
-            transition: 'opacity 0.2s',
-          }}
-        >
-          Carrito{' '}
-          <span style={{ color: '#C8A96E', marginLeft: '4px' }}>({totalItems})</span>
-        </button>
-      </div>
-    </nav>
+        {/* Desktop links */}
+        <div className="nav-desktop-links">
+          {NAV_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-[10px] tracking-[0.18em] text-verde-light no-underline uppercase transition-colors duration-200 hover:text-verde"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Wishlist */}
+          <Link
+            href="/wishlist"
+            className="nav-wishlist-btn"
+            title="Favoritos"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 21C12 21 3 14 3 8a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 13-9 13z"
+                stroke="rgba(28,61,46,0.5)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Link>
+
+          {/* Carrito */}
+          <button
+            onClick={openCart}
+            style={{
+              background: '#1C3D2E',
+              color: '#F5F0E8',
+              border: 'none',
+              padding: '10px 20px',
+              fontSize: '10px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              fontFamily: 'var(--ff-sans)',
+              transition: 'opacity 0.2s',
+            }}
+          >
+            Carrito{' '}
+            <span style={{ color: '#C8A96E', marginLeft: '4px' }}>({totalItems})</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile menu overlay */}
+      {menuOpen && (
+        <div className="nav-mobile-menu" style={{ zIndex: 99 }}>
+          {NAV_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="nav-mobile-link"
+              onClick={() => setMenuOpen(false)}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
   )
 }

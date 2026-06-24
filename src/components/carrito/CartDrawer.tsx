@@ -40,12 +40,11 @@ export default function CartDrawer() {
       />
 
       {/* Panel */}
-      <div style={{
+      <div className="cart-panel" style={{
         position: 'fixed',
         top: 0,
         right: 0,
         bottom: 0,
-        width: '420px',
         background: 'var(--crema)',
         zIndex: 201,
         display: 'flex',

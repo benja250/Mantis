@@ -16,11 +16,11 @@ export default function ProductosDestacados() {
   return (
     <section>
       {/* Encabezado */}
-      <div style={{
+      <div className="products-header" style={{
         padding: '60px 48px 36px',
         display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
       }}>
-        <h2 style={{
+        <h2 className="products-header-title" style={{
           fontFamily: 'var(--ff-serif)', fontSize: '42px', fontWeight: 300, color: 'var(--verde)',
         }}>
           Colección <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>destacada</em>
@@ -35,11 +35,7 @@ export default function ProductosDestacados() {
       </div>
 
       {/* Grid */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1px', background: 'rgba(28,61,46,0.08)',
-        margin: '0 48px 60px',
-      }}>
+      <div className="products-grid products-featured-wrap">
         {products.map(p => {
           const minStock = Math.min(...p.variantes.map(v => v.stock))
           return (

@@ -9,7 +9,7 @@ export default async function CollaresPage() {
 
   return (
     <main>
-      <div style={{
+      <div className="catalog-header" style={{
         padding: '60px 48px 36px',
         display: 'flex',
         alignItems: 'baseline',

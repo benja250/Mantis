@@ -60,7 +60,7 @@ export default function BrandStory() {
 
   return (
     <>
-      <div style={{
+      <div className="brand-story-grid" style={{
         padding: '64px 48px',
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',

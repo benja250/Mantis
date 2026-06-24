@@ -12,14 +12,14 @@ const LINKS = [
 export default function Footer() {
   return (
     <footer
-      className="flex items-center justify-between bg-crema"
+      className="flex items-center justify-between bg-crema footer-bar"
       style={{ borderTop: '0.5px solid rgba(28,61,46,0.1)', padding: '40px 80px' }}
     >
       <div className="font-serif text-[20px] text-verde tracking-[0.14em] font-medium">
         MANTIS
       </div>
 
-      <div className="flex" style={{ gap: '32px' }}>
+      <div className="flex footer-links" style={{ gap: '32px' }}>
         {LINKS.map(({ href, label, external }) =>
           external ? (
             <a

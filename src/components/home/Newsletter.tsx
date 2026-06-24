@@ -1,6 +1,6 @@
 export default function Newsletter() {
   return (
-    <div style={{
+    <div className="newsletter-section" style={{
       background: 'var(--verde)',
       padding: '56px 48px',
       display: 'flex',
@@ -36,10 +36,11 @@ export default function Newsletter() {
       <form
         action="/api/newsletter"
         method="POST"
+        className="newsletter-form"
         style={{ display: 'flex', flexShrink: 0 }}
       >
         <input
-          className="nl-input"
+          className="nl-input newsletter-input"
           type="email"
           name="email"
           placeholder="tu@correo.com"

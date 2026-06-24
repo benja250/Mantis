@@ -47,20 +47,20 @@ function Estrellas({ n }: { n: number }) {
 
 export default function Resenas() {
   return (
-    <section style={{
+    <section className="resenas-section" style={{
       background: '#EDE5D4',
       borderTop: '0.5px solid rgba(28,61,46,0.08)',
       padding: '72px 48px',
     }}>
       {/* Encabezado */}
-      <div style={{ marginBottom: '48px' }}>
+      <div className="resenas-header" style={{ marginBottom: '48px' }}>
         <div style={{
           fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
           color: 'var(--dorado)', marginBottom: '12px',
         }}>
           Reseñas
         </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div className="resenas-header-row" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <h2 style={{
             fontFamily: 'var(--ff-serif)', fontSize: '38px', fontWeight: 300, color: 'var(--verde)',
           }}>
@@ -76,10 +76,7 @@ export default function Resenas() {
       </div>
 
       {/* Grid reseñas */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '16px',
-      }}>
+      <div className="resenas-grid">
         {RESENAS.map((r) => (
           <div key={r.nombre} style={{
             background: '#EDE5D4', padding: '32px 28px',

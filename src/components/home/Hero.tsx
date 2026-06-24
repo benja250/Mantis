@@ -47,23 +47,23 @@ function BraceletSVG() {
 
 export default function Hero() {
   return (
-    <section className="grid grid-cols-2" style={{ minHeight: '520px' }}>
+    <section className="grid grid-cols-2 hero-section" style={{ minHeight: '520px' }}>
 
       {/* Columna izquierda */}
-      <div className="flex flex-col justify-center bg-crema" style={{ padding: '64px 48px' }}>
+      <div className="flex flex-col justify-center bg-crema hero-left" style={{ padding: '64px 48px' }}>
         <div className="hero-tag">
           <span className="hero-tag-line" />
           Bañadas en oro 18k · Envío a todo Chile
         </div>
 
-        <h1 className="font-serif text-[64px] font-light text-verde leading-[0.98] mb-3">
+        <h1 className="font-serif text-[64px] font-light text-verde leading-[0.98] mb-3 hero-title">
           Pequeños<br />
           detalles,<br />
           <em className="text-dorado italic">grandes</em><br />
           momentos.
         </h1>
 
-        <p className="font-serif text-[17px] italic text-verde-light mb-14 leading-[1.7]">
+        <p className="font-serif text-[17px] italic text-verde-light mb-14 leading-[1.7] hero-subtitle">
           Pulseras y collares que cuentan tu historia.
         </p>
 
@@ -74,7 +74,7 @@ export default function Hero() {
       </div>
 
       {/* Columna derecha */}
-      <div className="bg-crema-dark flex items-center justify-center relative overflow-hidden">
+      <div className="bg-crema-dark flex items-center justify-center relative overflow-hidden hero-right">
         {/* Círculos decorativos */}
         <div className="absolute w-[340px] h-[340px] rounded-full"
           style={{ border: '0.5px solid rgba(28,61,46,0.07)' }} />

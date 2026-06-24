@@ -48,11 +48,11 @@ function CajaSVG() {
 export default function Empaque() {
   return (
     <section className="bg-verde text-crema">
-      <div className="grid grid-cols-2">
+      <div className="grid grid-cols-2 empaque-grid">
 
         {/* Izquierda: ilustración */}
         <div
-          className="flex items-center justify-center"
+          className="flex items-center justify-center empaque-left"
           style={{
             padding: '72px 48px',
             background: 'rgba(245,240,232,0.04)',
@@ -63,7 +63,7 @@ export default function Empaque() {
         </div>
 
         {/* Derecha: copy */}
-        <div style={{ padding: '72px 56px' }}>
+        <div className="empaque-right" style={{ padding: '72px 56px' }}>
           <div style={{
             fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
             color: 'var(--dorado-pale)', opacity: 0.7, marginBottom: '20px',

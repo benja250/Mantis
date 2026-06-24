@@ -10,7 +10,7 @@ export default async function PulserasPage() {
   return (
     <main>
       {/* Encabezado de categoría */}
-      <div style={{
+      <div className="catalog-header" style={{
         padding: '60px 48px 36px',
         display: 'flex',
         alignItems: 'baseline',

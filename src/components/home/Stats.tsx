@@ -15,7 +15,7 @@ export default function Stats() {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="stats-grid">
         {STATS.map(({ num, label, clickable }, i) => {
           const content = (
             <>

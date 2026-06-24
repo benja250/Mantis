@@ -10,13 +10,7 @@ export default function CatalogoGrid({ products }: { products: Product[] }) {
 
   return (
     <>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1px',
-        background: 'rgba(28,61,46,0.08)',
-        margin: '0 48px 80px',
-      }}>
+      <div className="products-grid products-catalog-wrap">
         {products.map(product => (
           <ProductCard
             key={product.id}

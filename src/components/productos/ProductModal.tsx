@@ -144,22 +144,10 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
       />
 
       {/* Lightbox */}
-      <div style={{
-        position: 'fixed',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '90vw', maxWidth: '860px',
-        maxHeight: '90vh',
-        background: 'var(--crema)',
-        zIndex: 201,
-        display: 'grid',
-        gridTemplateColumns: '45% 55%',
-        overflow: 'hidden',
-        boxShadow: '0 24px 80px rgba(20,40,30,0.25)',
-      }}>
+      <div className="modal-container">
 
         {/* Columna izquierda — imagen */}
-        <div style={{ position: 'relative', background: '#EDE5D4', minHeight: '420px' }}>
+        <div className="modal-image-col" style={{ position: 'relative', background: '#EDE5D4', minHeight: '420px' }}>
           {detail.imagen_url ? (
             <img
               src={detail.imagen_url}
@@ -196,7 +184,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
         </div>
 
         {/* Columna derecha — info con scroll */}
-        <div style={{
+        <div className="modal-info-col" style={{
           overflowY: 'auto',
           maxHeight: '90vh',
           display: 'flex',
