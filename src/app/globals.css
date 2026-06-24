@@ -39,10 +39,6 @@
 /* ─── Reset ─────────────────────────────────────────────────────── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html {
-  zoom: 1.2;
-}
-
 body {
   background: var(--crema);
   color: var(--verde);
