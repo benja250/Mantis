@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Benja/.claude/projects/c--Users-Benja-Desktop-Mantis/memory/**)"
+    ]
+  }
+}
