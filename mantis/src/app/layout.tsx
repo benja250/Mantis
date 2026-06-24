@@ -24,7 +24,10 @@ const jost = Jost({
 export const metadata: Metadata = {
   title: "MANTIS — Joyas Bañadas en Oro",
   description: "Pulseras, collares y dijes bañados en oro 18k. Pequeños detalles, grandes momentos.",
-
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
