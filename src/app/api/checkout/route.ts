@@ -1,5 +1,6 @@
 import { createPayment, getPayUrl } from '@/lib/flow/client'
 import { crearOrden, actualizarOrdenToken } from '@/lib/supabase/queries'
+import { enviarConfirmacionPedido, enviarNotificacionAdmin } from '@/lib/email'
 
 const BASE_URL = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000'
 const DEV_MODE = !process.env.FLOW_API_KEY
@@ -48,6 +49,38 @@ export async function POST(request: Request) {
     } else {
       numeroOrden = ++ordenCounter
     }
+
+    // Normalizar items para los emails
+    const itemsEmail = (items as Array<{ product: { nombre: string; precio: number }; variante?: string; cantidad: number }>).map(i => ({
+      nombre: i.product.nombre,
+      variante: i.variante ?? null,
+      cantidad: i.cantidad,
+      precio: i.product.precio,
+      subtotal: i.product.precio * i.cantidad,
+    }))
+
+    const datosEmail = {
+      numero: numeroOrden,
+      cliente_nombre: nombre as string,
+      cliente_email: email as string,
+      cliente_telefono: telefono as string,
+      direccion: direccion as string,
+      ciudad: ciudad as string,
+      region: region as string,
+      courier: courier as string,
+      items: itemsEmail,
+      subtotal: subtotal as number,
+      descuento: (descuento ?? 0) as number,
+      costo_despacho: costo_despacho as number,
+      total: total as number,
+      cupon_codigo: cupon ?? null,
+    }
+
+    // Enviar emails en paralelo sin bloquear la respuesta si fallan
+    Promise.all([
+      enviarConfirmacionPedido(datosEmail),
+      enviarNotificacionAdmin(datosEmail),
+    ]).catch(err => console.error('[email] envio pedido:', err))
 
     // Sin credenciales Flow → modo desarrollo
     if (DEV_MODE) {

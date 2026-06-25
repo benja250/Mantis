@@ -28,8 +28,19 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados }: { cadena: strin
   const chainStrokeWidth = cadena === 'snake' ? 7 : cadena === 'eslabones' ? 5 : 3
   const chainDash = cadena === 'eslabones' ? '12 6' : 'none'
 
+  const n = dijesSeleccionados.length
+  // Tamaño dinámico: grande cuando hay pocos dijes, se achica al agregar más
+  const AVAILABLE = 220   // px de ancho útil sobre la cadena
+  const MAX_SIZE  = 68    // tamaño máximo de cada dije
+  const MIN_SIZE  = 26    // tamaño mínimo antes de que queden ilegibles
+  const RATIO     = 1.15  // factor de espacio entre centros (step = size * ratio)
+  const dijeSize = n === 0 ? MAX_SIZE : Math.max(MIN_SIZE, Math.min(MAX_SIZE, AVAILABLE / (RATIO * (n - 1) + 1)))
+  const half = dijeSize / 2
+  const step = n <= 1 ? 0 : dijeSize * RATIO
+  const startX = 175 - ((n - 1) * step) / 2
+
   return (
-    <svg width="340" height="160" viewBox="0 0 340 160">
+    <svg width="340" height="200" viewBox="0 0 340 200">
       <path d="M30 80 Q170 80 310 80" fill="none" stroke="#A07830" strokeWidth={chainStrokeWidth} strokeLinecap="round" strokeDasharray={chainDash} />
       {cadena === 'snake' && (
         <path d="M30 80 Q170 80 310 80" fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 6" />
@@ -39,28 +50,26 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados }: { cadena: strin
       <circle cx="318" cy="80" r="3" fill="#A07830" />
 
       {dijesSeleccionados.map((dije, i) => {
-        const n = dijesSeleccionados.length
-        const step = n <= 1 ? 0 : Math.min(60, 200 / (n - 1))
-        const startX = n <= 1 ? 175 : 175 - (step * (n - 1)) / 2
         const x = startX + i * step
         const previewUrl = getPreviewUrl(dije.imagen_url)
+        const cy = 97 + half  // centro del dije para el fallback
         return (
           <g key={`${dije.id}-${i}`}>
             <line x1={x} y1="83" x2={x} y2="97" stroke="#A07830" strokeWidth="1" />
             <circle cx={x} cy="97" r="2.5" fill="#A07830" />
             {previewUrl ? (
-              <image href={previewUrl} x={x - 22} y={97} width={44} height={44} preserveAspectRatio="xMidYMid meet" />
+              <image href={previewUrl} x={x - half} y={97} width={dijeSize} height={dijeSize} preserveAspectRatio="xMidYMid meet" />
             ) : (
               <>
-                <circle cx={x} cy="119" r="10" fill="none" stroke="#C8A96E" strokeWidth="1.2" />
-                <circle cx={x} cy="119" r="3" fill="#A07830" />
+                <circle cx={x} cy={cy} r={half * 0.8} fill="none" stroke="#C8A96E" strokeWidth="1.2" />
+                <circle cx={x} cy={cy} r={half * 0.22} fill="#A07830" />
               </>
             )}
           </g>
         )
       })}
 
-      {dijesSeleccionados.length === 0 && (
+      {n === 0 && (
         <g opacity="0.15">
           <line x1="175" y1="84" x2="175" y2="100" stroke="#A07830" strokeWidth="1.5" />
           <circle cx="175" cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
@@ -83,6 +92,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   const [ordenTexto, setOrdenTexto] = useState('')
   const [dijeModal, setDijeModal] = useState<Product | null>(null)
   const [added, setAdded] = useState(false)
+  const [generandoImagen, setGenerandoImagen] = useState(false)
 
   const precioTotal = PRECIO_BASE + dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
   const preciosDijes = dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
@@ -99,17 +109,77 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
     })
   }
 
-  function handleAgregar() {
+  async function generarImagenPulsera(): Promise<string | undefined> {
+    const n = dijesSeleccionados.length
+
+    // Mismo layout que PrevisualizacionPulsera
+    const AVAILABLE = 220, MAX_SIZE = 68, MIN_SIZE = 26, RATIO = 1.15
+    const dijeSize = n === 0 ? MAX_SIZE : Math.max(MIN_SIZE, Math.min(MAX_SIZE, AVAILABLE / (RATIO * (n - 1) + 1)))
+    const half = dijeSize / 2
+    const step = n <= 1 ? 0 : dijeSize * RATIO
+    const startX = 175 - ((n - 1) * step) / 2
+
+    // Fetch y convertir cada imagen a base64 para que el SVG sea autocontenido
+    const bases64 = await Promise.all(
+      dijesSeleccionados.map(async (dije) => {
+        const url = getPreviewUrl(dije.imagen_url)
+        if (!url) return null
+        try {
+          const res = await fetch(url)
+          if (!res.ok) return null
+          const blob = await res.blob()
+          return await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+          })
+        } catch { return null }
+      })
+    )
+
+    const dijeEls = dijesSeleccionados.map((_, i) => {
+      const x = startX + i * step
+      const b64 = bases64[i]
+      const cy = 97 + half
+      const anchor = `<line x1="${x}" y1="83" x2="${x}" y2="97" stroke="#A07830" stroke-width="1"/><circle cx="${x}" cy="97" r="2.5" fill="#A07830"/>`
+      if (!b64) {
+        return anchor +
+          `<circle cx="${x}" cy="${cy}" r="${half * 0.8}" fill="none" stroke="#C8A96E" stroke-width="1.2"/>` +
+          `<circle cx="${x}" cy="${cy}" r="${half * 0.22}" fill="#A07830"/>`
+      }
+      return anchor +
+        `<image href="${b64}" x="${x - half}" y="97" width="${dijeSize}" height="${dijeSize}" preserveAspectRatio="xMidYMid meet"/>`
+    }).join('')
+
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 200">` +
+      `<rect width="340" height="200" fill="#F5F0E8"/>` +
+      `<path d="M30 80 Q170 80 310 80" fill="none" stroke="#A07830" stroke-width="3" stroke-linecap="round"/>` +
+      `<rect x="16" y="73" width="16" height="14" rx="4" fill="#A07830"/>` +
+      `<circle cx="318" cy="80" r="8" fill="none" stroke="#A07830" stroke-width="2"/>` +
+      `<circle cx="318" cy="80" r="3" fill="#A07830"/>` +
+      dijeEls +
+      `</svg>`
+
+    return 'data:image/svg+xml,' + encodeURIComponent(svg)
+  }
+
+  async function handleAgregar() {
     if (!largo) return
+    setGenerandoImagen(true)
     const pulsera = PULSERAS_BASE.find(p => p.id === cadena)?.label ?? cadena
     const nombres = dijesSeleccionados.map(d => d.nombre).join(', ')
     const descripcion = `${pulsera}, talla ${largo} (${LARGOS.find(l => l.id === largo)?.cm} cm)${nombres ? ` · Dijes: ${nombres}` : ''}${ordenTexto ? ` · Orden: ${ordenTexto}` : ''}`
+    const imagen_url = await generarImagenPulsera()
+    setGenerandoImagen(false)
     addItem({
       id: `custom-${Date.now()}`,
       slug: 'crear-pulsera',
       nombre: 'Pulsera Personalizada',
       descripcion_corta: descripcion,
       precio: precioTotal,
+      imagen_url,
     }, `${pulsera} · ${largo}`)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
@@ -317,9 +387,10 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               </div>
               <button
                 onClick={handleAgregar}
-                style={{ background: added ? 'var(--verde-mid)' : 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '16px', fontFamily: 'var(--ff-sans)', fontSize: '10px', letterSpacing: '0.28em', textTransform: 'uppercase', cursor: 'pointer', width: '100%', transition: 'all 0.2s' }}
+                disabled={generandoImagen || added}
+                style={{ background: added ? 'var(--verde-mid)' : 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '16px', fontFamily: 'var(--ff-sans)', fontSize: '10px', letterSpacing: '0.28em', textTransform: 'uppercase', cursor: generandoImagen ? 'not-allowed' : 'pointer', width: '100%', transition: 'all 0.2s', opacity: generandoImagen ? 0.7 : 1 }}
               >
-                {added ? '✓ Agregada al carrito' : `+ Agregar al carrito — ${formatPrice(precioTotal)}`}
+                {generandoImagen ? 'Preparando…' : added ? '✓ Agregada al carrito' : `+ Agregar al carrito — ${formatPrice(precioTotal)}`}
               </button>
             </div>
           )}

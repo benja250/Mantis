@@ -408,6 +408,13 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
                         if (error) { showToast('Error al actualizar', true); return }
                         setOrdenes(prev => prev.map(x => x.id === o.id ? { ...x, estado: nuevo } : x))
                         showToast('Estado actualizado: ' + nuevo)
+                        if (nuevo === 'despachado') {
+                          globalThis.fetch('/api/ordenes/despachar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orden_id: o.id }),
+                          }).catch(err => console.error('[despachar email]', err))
+                        }
                       }}
                       style={{ fontFamily:'var(--ff-sans)', fontSize:'10px', letterSpacing:'0.09em', textTransform:'uppercase', border:'0.5px solid rgba(28,61,46,.17)', background:'transparent', color:'var(--verde)', padding:'4px 7px', cursor:'pointer', appearance:'none', outline:'none' }}
                     >
@@ -784,6 +791,13 @@ function PanelBody({
     if (error) { showToast('Error al actualizar', true); return }
     setOEstado(estado)
     showToast('Estado: ' + estado)
+    if (estado === 'despachado') {
+      fetch('/api/ordenes/despachar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orden_id: orden.id }),
+      }).catch(err => console.error('[despachar email]', err))
+    }
   }
 
   // Render panel body content
