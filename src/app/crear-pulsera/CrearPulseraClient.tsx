@@ -5,10 +5,9 @@ import { useCartStore } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/format'
 import type { Product } from '@/types'
 
-const CADENAS = [
-  { id: 'lisa',      label: 'Lisa',      desc: 'Elegancia minimalista' },
-  { id: 'eslabones', label: 'Eslabones', desc: 'Estilo statement' },
-  { id: 'snake',     label: 'Snake',     desc: 'La más popular' },
+const PULSERAS_BASE = [
+  { id: 'base', label: 'Pulsera base', desc: 'Baño oro 18k' },
+  // Agregar más tipos de pulsera aquí en el futuro
 ]
 
 const LARGOS = [
@@ -78,7 +77,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   console.log('[CrearPulsera] dijes desde Supabase:', dijes.map(d => ({ id: d.id, nombre: d.nombre, imagen_url: d.imagen_url })))
 
   const [step, setStep] = useState(1)
-  const [cadena, setCadena] = useState<string | null>(null)
+  const [cadena, setCadena] = useState<string>(PULSERAS_BASE[0].id)
   const [largo, setLargo] = useState<string | null>(null)
   const [dijesSeleccionados, setDijesSeleccionados] = useState<Product[]>([])
   const [ordenTexto, setOrdenTexto] = useState('')
@@ -101,21 +100,22 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   }
 
   function handleAgregar() {
-    if (!cadena || !largo) return
+    if (!largo) return
+    const pulsera = PULSERAS_BASE.find(p => p.id === cadena)?.label ?? cadena
     const nombres = dijesSeleccionados.map(d => d.nombre).join(', ')
-    const descripcion = `Cadena ${cadena}, talla ${largo} (${LARGOS.find(l => l.id === largo)?.cm} cm)${nombres ? ` · Dijes: ${nombres}` : ''}${ordenTexto ? ` · Orden: ${ordenTexto}` : ''}`
+    const descripcion = `${pulsera}, talla ${largo} (${LARGOS.find(l => l.id === largo)?.cm} cm)${nombres ? ` · Dijes: ${nombres}` : ''}${ordenTexto ? ` · Orden: ${ordenTexto}` : ''}`
     addItem({
       id: `custom-${Date.now()}`,
       slug: 'crear-pulsera',
       nombre: 'Pulsera Personalizada',
       descripcion_corta: descripcion,
       precio: precioTotal,
-    }, `${cadena} · ${largo}`)
+    }, `${pulsera} · ${largo}`)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
 
-  const canContinue = [cadena !== null, largo !== null, true, true][step - 1]
+  const canContinue = [true, largo !== null, true, true][step - 1]
 
   return (
     <main>
@@ -136,7 +136,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
 
           {/* Indicador */}
           <div style={{ display: 'flex', marginBottom: '48px' }}>
-            {['Cadena', 'Largo', 'Dijes', 'Confirmar'].map((label, i) => {
+            {['Pulsera', 'Largo', 'Dijes', 'Confirmar'].map((label, i) => {
               const n = i + 1
               const active = step === n
               const done = step > n
@@ -168,31 +168,34 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
             })}
           </div>
 
-          {/* Paso 1: Cadena */}
+          {/* Paso 1: Pulsera base */}
           {step === 1 && (
             <div>
               <h2 style={{ fontFamily: 'var(--ff-serif)', fontSize: '30px', fontWeight: 300, color: 'var(--verde)', marginBottom: '28px' }}>
-                Elige el tipo de cadena
+                Tu pulsera base
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
-                {CADENAS.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setCadena(c.id)}
+                {PULSERAS_BASE.map(p => (
+                  <div
+                    key={p.id}
                     style={{
-                      textAlign: 'left', padding: '20px 24px', cursor: 'pointer',
-                      border: cadena === c.id ? '0.5px solid var(--verde)' : '0.5px solid rgba(28,61,46,0.2)',
-                      background: cadena === c.id ? 'rgba(28,61,46,0.03)' : 'transparent',
+                      padding: '20px 24px',
+                      border: '0.5px solid var(--verde)',
+                      background: 'rgba(28,61,46,0.03)',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      transition: 'all 0.15s',
                     }}
                   >
                     <div>
-                      <p style={{ fontSize: '15px', color: 'var(--verde)', marginBottom: '3px' }}>{c.label}</p>
-                      <p style={{ fontSize: '11px', color: '#3a6b52' }}>{c.desc}</p>
+                      <p style={{ fontFamily: 'var(--ff-serif)', fontSize: '18px', color: 'var(--verde)', marginBottom: '3px' }}>{p.label}</p>
+                      <p style={{ fontSize: '11px', color: '#3a6b52', letterSpacing: '0.06em' }}>{p.desc}</p>
                     </div>
-                    {cadena === c.id && <span style={{ color: 'var(--verde)', fontSize: '16px' }}>✓</span>}
-                  </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--dorado)', border: '0.5px solid rgba(160,120,48,0.3)', padding: '3px 8px' }}>
+                        Incluida
+                      </span>
+                      <span style={{ color: 'var(--verde)', fontSize: '18px' }}>✓</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -246,7 +249,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   {dijes.map(d => {
                     const count = dijesSeleccionados.filter(s => s.id === d.id).length
                     return (
-                      <div key={d.id} style={{ background: 'var(--crema)', display: 'flex', flexDirection: 'column' }}>
+                      <div key={d.id} style={{ background: '#faf9f6', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
                         {/* Imagen cuadrada */}
                         <div style={{ width: '100%', aspectRatio: '1', background: 'var(--crema-dark)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {d.imagen_url ? (
@@ -290,18 +293,6 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   })}
                 </div>
               )}
-
-              <div>
-                <label style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '8px' }}>
-                  Orden de dijes (opcional)
-                </label>
-                <input
-                  className="checkout-input"
-                  value={ordenTexto}
-                  onChange={e => setOrdenTexto(e.target.value)}
-                  placeholder="Ej: corazón en el centro, estrellas a los lados"
-                />
-              </div>
             </div>
           )}
 
@@ -313,7 +304,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '36px' }}>
                 {[
-                  { label: 'Cadena', value: CADENAS.find(c => c.id === cadena)?.label ?? '—' },
+                  { label: 'Pulsera', value: PULSERAS_BASE.find(p => p.id === cadena)?.label ?? '—' },
                   { label: 'Largo', value: LARGOS.find(l => l.id === largo) ? `${largo} — ${LARGOS.find(l => l.id === largo)!.cm} cm` : '—' },
                   { label: 'Dijes', value: dijesSeleccionados.length > 0 ? dijesSeleccionados.map(d => d.nombre).join(', ') : 'Sin dijes' },
                   ...(ordenTexto ? [{ label: 'Orden', value: ordenTexto }] : []),
@@ -385,6 +376,37 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '26px', color: 'var(--dorado)' }}>{formatPrice(precioTotal)}</span>
             </div>
           </div>
+
+          {step === 3 && (
+            <div style={{ borderTop: '0.5px solid rgba(28,61,46,0.1)', paddingTop: '24px' }}>
+              <label style={{ display: 'block', fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '8px' }}>
+                Orden de dijes (opcional)
+              </label>
+              <input
+                className="checkout-input"
+                value={ordenTexto}
+                onChange={e => setOrdenTexto(e.target.value)}
+                placeholder="Ej: corazón en el centro, estrellas a los lados"
+              />
+            </div>
+          )}
+
+          {step === 3 && (
+            <div style={{ borderTop: '0.5px solid rgba(28,61,46,0.1)', paddingTop: '24px', display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setStep(s => s - 1)}
+                style={{ background: 'none', border: '0.5px solid rgba(28,61,46,0.2)', color: 'var(--verde)', padding: '12px 16px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+              >
+                ← Atrás
+              </button>
+              <button
+                onClick={() => setStep(4)}
+                style={{ flex: 1, background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '12px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
