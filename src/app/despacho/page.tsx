@@ -107,7 +107,7 @@ export default function DespachoPage() {
         {[
           {
             title: 'Costo de despacho',
-            text: 'RM: desde $2.990\nRegiones: desde $3.500\nGratis sobre $30.000',
+            text: 'El costo varía según tu ubicación. Al finalizar la compra se calculará automáticamente antes de confirmar.',
           },
           {
             title: 'Seguimiento',
