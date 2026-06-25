@@ -1,111 +1,204 @@
+import Image from 'next/image'
+
 export default function NosotrosPage() {
   return (
     <main>
-      {/* Hero */}
+      {/* Verde Hero */}
       <div style={{
-        padding: '80px 48px 60px',
-        background: 'var(--crema-dark)',
-        borderBottom: '0.5px solid rgba(28,61,46,0.1)',
+        minHeight: '300px',
+        background: 'var(--verde)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '40px',
       }}>
         <div style={{
-          fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: 'var(--dorado)', marginBottom: '20px',
-        }}>
-          Nuestra historia
+          position: 'absolute',
+          width: '400px', height: '400px',
+          border: '0.5px solid rgba(245,240,232,0.05)',
+          borderRadius: '50%',
+          top: '-80px', right: '-60px',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '560px' }}>
+          <div style={{
+            fontSize: '9px', letterSpacing: '0.34em', color: 'var(--dorado-pale)',
+            textTransform: 'uppercase', marginBottom: '12px',
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            <span style={{ display: 'inline-block', width: '16px', height: '0.5px', background: 'var(--dorado-pale)' }} />
+            Nuestra historia
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300,
+            color: 'var(--crema)', lineHeight: 0.95, marginBottom: '14px',
+          }}>
+            Un negocio<br />
+            de <em style={{ color: 'var(--dorado-pale)', fontStyle: 'italic' }}>familia.</em>
+          </h1>
+          <p style={{
+            fontFamily: 'var(--ff-serif)', fontSize: '15px', fontStyle: 'italic',
+            color: 'rgba(245,240,232,0.4)', lineHeight: 1.7,
+          }}>
+            Mantis nació del amor por los detalles que hacen grande un día.
+          </p>
         </div>
-        <h1 style={{
-          fontFamily: 'var(--ff-serif)', fontSize: '56px', fontWeight: 300,
-          color: 'var(--verde)', lineHeight: 1.05,
-        }}>
-          Joyas que <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>perduran</em><br />
-          en el tiempo
-        </h1>
       </div>
 
       {/* Historia */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr',
-        gap: '64px', padding: '72px 48px',
-        borderBottom: '0.5px solid rgba(28,61,46,0.08)',
-      }}>
-        <div>
-          <h2 style={{
-            fontFamily: 'var(--ff-serif)', fontSize: '34px', fontWeight: 300,
-            color: 'var(--verde)', marginBottom: '24px',
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        <div style={{
+          background: 'var(--crema-dark)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '340px', position: 'relative',
+        }}>
+          <Image
+            src="/logo.png"
+            alt="Mantis"
+            width={345}
+            height={391}
+            quality={100}
+            style={{ objectFit: 'contain', width: '180px', height: 'auto', position: 'relative', zIndex: 1 }}
+          />
+        </div>
+        <div style={{
+          padding: '48px 40px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        }}>
+          <div style={{
+            fontSize: '9px', letterSpacing: '0.34em', color: 'var(--dorado)',
+            textTransform: 'uppercase', marginBottom: '12px',
+            display: 'flex', alignItems: 'center', gap: '7px',
           }}>
-            Un negocio de familia
+            <span style={{ display: 'inline-block', width: '13px', height: '0.5px', background: 'var(--dorado)' }} />
+            El origen
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--ff-serif)', fontSize: '36px', fontWeight: 300,
+            lineHeight: 1, marginBottom: '18px',
+          }}>
+            Todo empezó con<br />
+            una <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>búsqueda</em>
           </h2>
-          <p style={{ fontSize: '14px', color: '#3a6b52', lineHeight: 2, marginBottom: '20px' }}>
-            Mantis nació en casa. Lo que empezó como un proyecto personal para regalar joyas
-            a las personas que más queremos, se fue convirtiendo en algo más grande: una pequeña
-            empresa familiar con el sueño de que todas las personas puedan acceder a joyas
-            bonitas, duraderas y a un precio justo.
+          <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 2, marginBottom: '10px' }}>
+            Mantis es un emprendimiento familiar que nació de la búsqueda de una joya bonita, duradera y accesible. Lo que no encontramos afuera, decidimos crearlo nosotras.
           </p>
-          <p style={{ fontSize: '14px', color: '#3a6b52', lineHeight: 2 }}>
-            Cada pieza que vendemos pasa por nuestras manos antes de llegar a las tuyas.
-            Revisamos la calidad, empacamos con cuidado, y tratamos cada pedido como si fuera
-            un regalo nuestro para alguien que queremos.
+          <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 2 }}>
+            Cada pieza está pensada para acompañarte en lo cotidiano y en lo especial, bañada en oro 18k y diseñada para durar.
           </p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-          {[
-            { year: '2022', desc: 'Los primeros regalos — pulseras hechas con amor para amigas y familia.' },
-            { year: '2023', desc: 'Primeras ventas por Instagram. La respuesta nos sorprendió.' },
-            { year: '2024', desc: 'Lanzamos el catálogo online. Más de 80 modelos disponibles.' },
-            { year: '2025', desc: 'Despachamos a todo Chile. Mantis crece, pero sigue siendo familia.' },
-          ].map(({ year, desc }, i, arr) => (
-            <div key={year} style={{
-              display: 'flex', gap: '28px', alignItems: 'flex-start',
-              padding: '24px 0',
-              borderTop: '0.5px solid rgba(28,61,46,0.1)',
-              borderBottom: i === arr.length - 1 ? '0.5px solid rgba(28,61,46,0.1)' : 'none',
-            }}>
-              <span style={{
-                fontFamily: 'var(--ff-serif)', fontSize: '24px',
-                color: 'var(--dorado)', fontWeight: 300, flexShrink: 0, lineHeight: 1,
-              }}>{year}</span>
-              <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 1.8 }}>{desc}</p>
-            </div>
-          ))}
+      </div>
+
+      {/* Quote */}
+      <div style={{ padding: '44px 40px', background: 'var(--crema-dark)', textAlign: 'center' }}>
+        <p style={{
+          fontFamily: 'var(--ff-serif)', fontSize: '26px', fontStyle: 'italic', fontWeight: 300,
+          lineHeight: 1.4, maxWidth: '540px', margin: '0 auto 12px',
+        }}>
+          &ldquo;Porque creemos que no necesitas una ocasión <em style={{ color: 'var(--dorado)' }}>especial</em> para brillar.&rdquo;
+        </p>
+        <div style={{ fontSize: '10px', letterSpacing: '0.26em', textTransform: 'uppercase', color: '#3a6b52' }}>
+          — Mantis, joyas bañadas en oro
         </div>
       </div>
 
       {/* Valores */}
-      <div style={{ padding: '72px 48px', background: 'var(--crema)' }}>
-        <div style={{
-          fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: 'var(--dorado)', marginBottom: '40px',
+      <div style={{ padding: '48px 40px' }}>
+        <h2 style={{
+          fontFamily: 'var(--ff-serif)', fontSize: '34px', fontWeight: 300,
+          marginBottom: '32px', textAlign: 'center',
         }}>
-          Lo que nos mueve
-        </div>
+          Lo que nos <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>define</em>
+        </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'rgba(28,61,46,0.08)' }}>
           {[
             {
-              title: 'Calidad real',
-              desc: 'Baño de oro 18k garantizado. Resistente al agua, al sudor y al día a día. No vendemos algo que no usaríamos nosotras mismas.',
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="5" stroke="#1C3D2E" strokeWidth="1" />
+                  <path d="M4.5 7l2 2 3-3" stroke="#A07830" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ),
+              name: 'Calidad real',
+              desc: 'Baño de oro 18k de alta durabilidad. Sin atajos.',
             },
             {
-              title: 'Diseño con intención',
-              desc: 'Cada modelo existe porque lo buscamos y no lo encontramos en otro lugar, o porque una clienta nos lo pidió. Diseñamos con propósito.',
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1.5l1.3 3.5h3.5L9 7l1 3.5L7 9l-3 1.5L5 7 2.2 5h3.5z" stroke="#1C3D2E" strokeWidth="1" strokeLinejoin="round" />
+                </svg>
+              ),
+              name: 'Diseño con intención',
+              desc: 'Cada pieza pensada para quien la usa.',
             },
             {
-              title: 'Accesibles siempre',
-              desc: 'Creemos que la elegancia no tiene por qué ser cara. Trabajamos para que el precio sea justo sin sacrificar calidad.',
+              icon: (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="5" stroke="#1C3D2E" strokeWidth="1" />
+                  <path d="M7 4v3.5l2 1.3" stroke="#A07830" strokeWidth="1" strokeLinecap="round" />
+                </svg>
+              ),
+              name: 'Accesibles siempre',
+              desc: 'Precios justos para joyas que duran.',
             },
-          ].map(({ title, desc }) => (
-            <div key={title} style={{
-              background: 'var(--crema)', padding: '40px 36px',
-            }}>
-              <h3 style={{
-                fontFamily: 'var(--ff-serif)', fontSize: '26px', fontWeight: 300,
-                color: 'var(--verde)', marginBottom: '16px',
+          ].map(({ icon, name, desc }) => (
+            <div key={name} style={{ background: 'var(--crema)', padding: '28px' }}>
+              <div style={{
+                width: '32px', height: '32px',
+                border: '0.5px solid rgba(28,61,46,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '10px',
               }}>
-                {title}
-              </h3>
-              <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 1.9 }}>{desc}</p>
+                {icon}
+              </div>
+              <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '19px', marginBottom: '6px' }}>{name}</div>
+              <div style={{ fontSize: '11px', color: '#3a6b52', lineHeight: 1.8 }}>{desc}</div>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Marquee */}
+      <div style={{ padding: '18px 0', background: 'var(--verde)', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+        <div className="marquee-track">
+          {[
+            'Negocio familiar', 'Bañadas en oro 18k', 'Santiago, Chile', 'Para brillar todos los días',
+            'Negocio familiar', 'Bañadas en oro 18k', 'Santiago, Chile', 'Para brillar todos los días',
+          ].map((item, i) => (
+            <span key={i} style={{
+              display: 'inline-block',
+              fontFamily: 'var(--ff-serif)', fontSize: '14px', fontStyle: 'italic',
+              color: 'rgba(245,240,232,0.4)', padding: '0 36px',
+            }}>
+              {item} <span style={{ color: 'var(--dorado-pale)' }}>·</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{ padding: '40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{
+            fontSize: '9px', letterSpacing: '0.3em', color: 'var(--dorado)',
+            textTransform: 'uppercase', marginBottom: '7px',
+          }}>
+            Nuestra colección
+          </div>
+          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '30px', fontWeight: 300 }}>
+            Ver las joyas que<br />
+            creamos <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>para ti</em>
+          </div>
+        </div>
+        <a href="/pulseras" style={{
+          background: 'var(--verde)', color: 'var(--crema)',
+          padding: '12px 26px', textDecoration: 'none',
+          fontFamily: 'var(--ff-sans)', fontSize: '10px',
+          letterSpacing: '0.22em', textTransform: 'uppercase',
+          display: 'inline-block',
+        }}>
+          Ver colección →
+        </a>
       </div>
     </main>
   )

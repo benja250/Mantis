@@ -1,155 +1,135 @@
-import Link from 'next/link'
-
 export default function DespachoPage() {
   return (
     <main>
+      {/* Verde Hero */}
       <div style={{
-        padding: '80px 48px 60px',
-        background: 'var(--crema-dark)',
-        borderBottom: '0.5px solid rgba(28,61,46,0.1)',
+        minHeight: '220px',
+        background: 'var(--verde)',
+        display: 'flex',
+        alignItems: 'flex-end',
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '40px',
       }}>
         <div style={{
-          fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: 'var(--dorado)', marginBottom: '20px',
-        }}>
-          Envíos
+          position: 'absolute',
+          width: '400px', height: '400px',
+          border: '0.5px solid rgba(245,240,232,0.05)',
+          borderRadius: '50%',
+          top: '-80px', right: '-60px',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '560px' }}>
+          <div style={{
+            fontSize: '9px', letterSpacing: '0.34em', color: 'var(--dorado-pale)',
+            textTransform: 'uppercase', marginBottom: '12px',
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            <span style={{ display: 'inline-block', width: '16px', height: '0.5px', background: 'var(--dorado-pale)' }} />
+            Logística
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300,
+            color: 'var(--crema)', lineHeight: 0.95,
+          }}>
+            Despacho a<br />
+            <em style={{ color: 'var(--dorado-pale)', fontStyle: 'italic' }}>todo Chile</em>
+          </h1>
         </div>
-        <h1 style={{
-          fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300,
-          color: 'var(--verde)', lineHeight: 1.05,
-        }}>
-          Despachamos a<br />
-          <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>todo Chile</em>
-        </h1>
-        <p style={{
-          marginTop: '24px', fontSize: '14px', color: '#3a6b52',
-          lineHeight: 1.9, maxWidth: '480px',
-        }}>
-          Empacamos cada pedido con cuidado y lo despachamos el mismo día si compras
-          antes de las 18:00 (días hábiles).
-        </p>
       </div>
 
-      {/* Couriers */}
+      {/* Zonas */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr',
         gap: '1px', background: 'rgba(28,61,46,0.08)',
-        margin: '56px 48px',
+        margin: '0 40px',
       }}>
-        {[
-          {
-            label: 'Región Metropolitana',
-            courier: 'Paket',
-            plazo: '24–48 horas hábiles',
-            costo: 'Gratis sobre $30.000',
-            desc: 'Seguimiento en tiempo real. Entrega en tu puerta sin necesidad de ir a buscar el paquete.',
-          },
-          {
-            label: 'Regiones',
-            courier: 'Starken',
-            plazo: '2–8 días hábiles',
-            costo: 'Gratis sobre $30.000',
-            desc: 'Retiro en sucursal o despacho a domicilio. Seguimiento incluido con número de OT.',
-          },
-        ].map(({ label, courier, plazo, costo, desc }) => (
-          <div key={courier} style={{ background: 'var(--crema)', padding: '40px 36px' }}>
-            <div style={{
-              fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-              color: 'var(--dorado)', marginBottom: '16px',
-            }}>
-              {label}
-            </div>
-            <h2 style={{
-              fontFamily: 'var(--ff-serif)', fontSize: '32px', fontWeight: 300,
-              color: 'var(--verde)', marginBottom: '20px',
-            }}>
-              {courier}
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'baseline' }}>
-                <span style={{
-                  fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase',
-                  color: 'var(--dorado)', flexShrink: 0,
-                }}>
-                  Plazo
-                </span>
-                <span style={{ fontSize: '13px', color: 'var(--verde)' }}>{plazo}</span>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'baseline' }}>
-                <span style={{
-                  fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase',
-                  color: 'var(--dorado)', flexShrink: 0,
-                }}>
-                  Costo
-                </span>
-                <span style={{ fontSize: '13px', color: 'var(--verde)' }}>{costo}</span>
-              </div>
-            </div>
-            <p style={{ fontSize: '12px', color: '#3a6b52', lineHeight: 1.8 }}>{desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Info adicional */}
-      <div style={{
-        padding: '0 48px 72px',
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px',
-      }}>
-        {[
-          {
-            icon: '📦',
-            title: 'Empaque especial',
-            desc: 'Caja crema con tapa rígida y texto MANTIS en dorado. Dentro, bolsita verde con tu joya. Perfecto para regalar.',
-          },
-          {
-            icon: '⏰',
-            title: 'Despacho el mismo día',
-            desc: 'Pedidos confirmados antes de las 18:00 (días hábiles) salen el mismo día.',
-          },
-          {
-            icon: '📧',
-            title: 'Seguimiento por email',
-            desc: 'Recibes el número de seguimiento por email en cuanto despachamos tu pedido.',
-          },
-        ].map(({ title, desc }) => (
-          <div key={title} style={{
-            padding: '28px 0',
-            borderTop: '0.5px solid rgba(28,61,46,0.1)',
+        <div style={{ background: 'var(--crema)', padding: '28px' }}>
+          <div style={{
+            width: '36px', height: '36px',
+            border: '0.5px solid rgba(28,61,46,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '12px',
           }}>
-            <h3 style={{
-              fontFamily: 'var(--ff-serif)', fontSize: '18px', fontWeight: 300,
-              color: 'var(--verde)', marginBottom: '10px',
-            }}>
-              {title}
-            </h3>
-            <p style={{ fontSize: '12px', color: '#3a6b52', lineHeight: 1.8 }}>{desc}</p>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1.5C5.5 1.5 3 4 3 7c0 4 5 8 5 8s5-4 5-8c0-3-2.5-5.5-5-5.5z" stroke="#1C3D2E" strokeWidth="1" />
+              <circle cx="8" cy="7" r="2" fill="#A07830" />
+            </svg>
           </div>
-        ))}
-      </div>
-
-      {/* CTA seguimiento */}
-      <div style={{
-        margin: '0 48px 72px',
-        padding: '32px 36px',
-        background: 'var(--crema-dark)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div>
-          <p style={{ fontSize: '13px', color: 'var(--verde)', marginBottom: '4px' }}>
-            ¿Ya hiciste tu pedido?
-          </p>
-          <p style={{ fontSize: '11px', color: '#3a6b52', letterSpacing: '0.06em' }}>
-            Ingresa tu número de orden para ver el estado del despacho.
+          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '20px', marginBottom: '3px' }}>Región Metropolitana</div>
+          <div style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '10px' }}>
+            Via Paket
+          </div>
+          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '28px', color: 'var(--verde)', lineHeight: 1, marginBottom: '3px' }}>
+            24-48
+          </div>
+          <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '10px' }}>
+            Hrs hábiles
+          </div>
+          <p style={{ fontSize: '11px', color: '#3a6b52', lineHeight: 1.8 }}>
+            Paket se comunica por WhatsApp o llamada. Hasta 2 intentos de entrega gratuitos. Entrega entre 9:00 y 22:00 hrs.
           </p>
         </div>
-        <Link href="/seguimiento" style={{
-          background: 'var(--verde)', color: 'var(--crema)',
-          padding: '12px 28px', textDecoration: 'none',
-          fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase',
-          fontFamily: 'var(--ff-sans)',
-        }}>
-          Seguir pedido →
-        </Link>
+
+        <div style={{ background: 'var(--crema)', padding: '28px' }}>
+          <div style={{
+            width: '36px', height: '36px',
+            border: '0.5px solid rgba(28,61,46,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '12px',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2.5 8.5l5.5-5 5.5 5v6H2.5v-6z" stroke="#1C3D2E" strokeWidth="1" strokeLinejoin="round" />
+              <rect x="6" y="10" width="4" height="4.5" stroke="#A07830" strokeWidth=".8" />
+            </svg>
+          </div>
+          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '20px', marginBottom: '3px' }}>Resto de Chile</div>
+          <div style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '10px' }}>
+            Via Starken
+          </div>
+          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '28px', color: 'var(--verde)', lineHeight: 1, marginBottom: '3px' }}>
+            2-8
+          </div>
+          <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '10px' }}>
+            Días hábiles según región
+          </div>
+          <p style={{ fontSize: '11px', color: '#3a6b52', lineHeight: 1.8 }}>
+            Regiones centrales: 2-3 días. Regiones extremas (I, II, XI, XII): hasta 12 días. Recibes número de tracking por email.
+          </p>
+        </div>
+      </div>
+
+      {/* Info cards */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1px', background: 'rgba(28,61,46,0.08)',
+        margin: '1px 40px 44px',
+      }}>
+        {[
+          {
+            title: 'Costo de despacho',
+            text: 'RM: desde $2.990\nRegiones: desde $3.500\nGratis sobre $30.000',
+          },
+          {
+            title: 'Seguimiento',
+            text: 'Tracking enviado por email. Rastrear en track.paket.cl (RM) o starken.cl (Regiones)',
+          },
+          {
+            title: 'Plazos',
+            text: 'Desde confirmación de transferencia. Lunes a viernes, días hábiles.',
+          },
+        ].map(({ title, text }) => (
+          <div key={title} style={{ background: 'var(--crema)', padding: '20px' }}>
+            <div style={{
+              fontSize: '10px', letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: '#3a6b52', marginBottom: '5px',
+            }}>
+              {title}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--verde)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              {text}
+            </div>
+          </div>
+        ))}
       </div>
     </main>
   )

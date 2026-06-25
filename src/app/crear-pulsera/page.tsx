@@ -75,8 +75,11 @@ function PrevisualizacionPulsera({
       <circle cx="318" cy="80" r="3" fill="#A07830" />
 
       {/* Dijes */}
-      {dijesSeleccionados.slice(0, 3).map((dije, i) => {
-        const x = 110 + i * 70
+      {dijesSeleccionados.map((dije, i) => {
+        const n = dijesSeleccionados.length
+        const step = n <= 1 ? 0 : Math.min(70, 200 / (n - 1))
+        const startX = n <= 1 ? 175 : 175 - (step * (n - 1)) / 2
+        const x = startX + i * step
         return (
           <g key={`${dije.id}-${i}`}>
             <line x1={x} y1="84" x2={x} y2="100" stroke="#A07830" strokeWidth="1.5" />
@@ -97,17 +100,14 @@ function PrevisualizacionPulsera({
         )
       })}
 
-      {/* Placeholder dijes vacíos */}
-      {Array.from({ length: Math.max(0, 1 - dijesSeleccionados.length) }).map((_, i) => {
-        const x = 110 + (dijesSeleccionados.length + i) * 70
-        return (
-          <g key={`empty-${i}`} opacity="0.15">
-            <line x1={x} y1="84" x2={x} y2="100" stroke="#A07830" strokeWidth="1.5" />
-            <circle cx={x} cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
-            <circle cx={x} cy="118" r="10" fill="none" stroke="#A07830" strokeWidth="1" strokeDasharray="3 2" />
-          </g>
-        )
-      })}
+      {/* Placeholder cuando no hay dijes */}
+      {dijesSeleccionados.length === 0 && (
+        <g opacity="0.15">
+          <line x1="175" y1="84" x2="175" y2="100" stroke="#A07830" strokeWidth="1.5" />
+          <circle cx="175" cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
+          <circle cx="175" cy="118" r="10" fill="none" stroke="#A07830" strokeWidth="1" strokeDasharray="3 2" />
+        </g>
+      )}
     </svg>
   )
 }
@@ -129,7 +129,6 @@ export default function CrearPulseraPage() {
 
   function addDije(dije: Dije) {
     setDijesSeleccionados(prev => {
-      if (prev.length >= 3) return prev
       return [...prev, dije]
     })
   }
@@ -165,14 +164,14 @@ export default function CrearPulseraPage() {
       {/* Hero */}
       <div style={{
         padding: '60px 48px 40px',
-        background: 'var(--crema-dark)',
-        borderBottom: '0.5px solid rgba(28,61,46,0.1)',
+        background: 'var(--verde)',
+        borderBottom: '0.5px solid rgba(245,240,232,0.08)',
       }}>
-        <div style={{ fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '16px' }}>
+        <div style={{ fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase', color: 'var(--dorado-pale)', marginBottom: '16px' }}>
           Personaliza
         </div>
-        <h1 style={{ fontFamily: 'var(--ff-serif)', fontSize: '48px', fontWeight: 300, color: 'var(--verde)', marginBottom: '0' }}>
-          Crea tu <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>pulsera</em>
+        <h1 style={{ fontFamily: 'var(--ff-serif)', fontSize: '48px', fontWeight: 300, color: 'var(--crema)', marginBottom: '0' }}>
+          Crea tu <em style={{ color: 'var(--dorado-pale)', fontStyle: 'italic' }}>pulsera</em>
         </h1>
       </div>
 
@@ -291,7 +290,7 @@ export default function CrearPulseraPage() {
           {step === 3 && (
             <div>
               <h2 style={{ fontFamily: 'var(--ff-serif)', fontSize: '30px', fontWeight: 300, color: 'var(--verde)', marginBottom: '8px' }}>
-                Elige hasta 3 dijes
+                Elige tus dijes
               </h2>
               <p style={{ fontSize: '11px', color: '#3a6b52', marginBottom: '28px' }}>
                 Puedes repetir el mismo dije. Haz clic en uno para ver detalle.
@@ -324,13 +323,11 @@ export default function CrearPulseraPage() {
                   <button
                     key={d.id}
                     onClick={() => setDijeModal(d)}
-                    disabled={dijesSeleccionados.length >= 3 && !dijesSeleccionados.find(x => x === d)}
                     style={{
                       padding: '20px 12px', cursor: 'pointer',
                       border: '0.5px solid rgba(28,61,46,0.2)',
                       background: 'var(--crema)',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                      opacity: (dijesSeleccionados.length >= 3) ? 0.5 : 1,
                       transition: 'all 0.15s',
                     }}
                   >
@@ -507,12 +504,11 @@ export default function CrearPulseraPage() {
                   addDije(dijeModal)
                   setDijeModal(null)
                 }}
-                disabled={dijesSeleccionados.length >= 3}
                 style={{
                   flex: 1, background: 'var(--verde)', color: 'var(--crema)',
-                  border: 'none', padding: '12px', cursor: dijesSeleccionados.length >= 3 ? 'not-allowed' : 'pointer',
+                  border: 'none', padding: '12px', cursor: 'pointer',
                   fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase',
-                  fontFamily: 'var(--ff-sans)', opacity: dijesSeleccionados.length >= 3 ? 0.4 : 1,
+                  fontFamily: 'var(--ff-sans)',
                 }}
               >
                 + Agregar

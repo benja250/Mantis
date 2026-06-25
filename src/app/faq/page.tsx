@@ -86,20 +86,20 @@ export default function FAQPage() {
     <main>
       <div style={{
         padding: '80px 48px 60px',
-        background: 'var(--crema-dark)',
-        borderBottom: '0.5px solid rgba(28,61,46,0.1)',
+        background: 'var(--verde)',
+        borderBottom: '0.5px solid rgba(245,240,232,0.08)',
       }}>
         <div style={{
           fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: 'var(--dorado)', marginBottom: '20px',
+          color: 'var(--dorado-pale)', marginBottom: '20px',
         }}>
           Preguntas frecuentes
         </div>
         <h1 style={{
-          fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300, color: 'var(--verde)',
+          fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300, color: 'var(--crema)',
         }}>
           ¿En qué te podemos<br />
-          <em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>ayudar?</em>
+          <em style={{ color: 'var(--dorado-pale)', fontStyle: 'italic' }}>ayudar?</em>
         </h1>
       </div>
 
