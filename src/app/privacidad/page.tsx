@@ -49,11 +49,15 @@ export default function PrivacidadPage() {
             body: `Al realizar una compra aceptas que: (a) los precios están en pesos chilenos (CLP), (b) el despacho se coordina según la información proporcionada, (c) la garantía de 30 días aplica solo a defectos de fabricación y no a desgaste por uso.`,
           },
           {
-            title: '7. Cambios y devoluciones',
-            body: `Aceptamos cambios dentro de los 7 días corridos desde la recepción del pedido, siempre que la joya esté sin uso y en su empaque original. Los gastos de envío del cambio corren por cuenta del cliente salvo que el motivo sea un defecto de fabricación.`,
+            title: '7. Derecho a retracto',
+            body: `De acuerdo con la Ley N° 19.496 sobre Protección de los Derechos de los Consumidores (art. 3 bis), tienes derecho a retractarte de tu compra dentro de los 10 días hábiles siguientes a la recepción del producto, sin necesidad de expresar causa. Para ejercer este derecho escríbenos a hola@mantisjoyas.cl con tu número de orden. El producto debe ser devuelto en las mismas condiciones en que fue recibido. Los gastos de devolución corren por tu cuenta salvo que el motivo sea un defecto de fabricación o un error nuestro.`,
           },
           {
-            title: '8. Contacto',
+            title: '8. Cambios y devoluciones',
+            body: `Además del derecho a retracto legal (sección 7), aceptamos cambios por talla o modelo dentro de los 10 días corridos desde la recepción, siempre que la joya esté sin uso y en su empaque original. Los gastos de envío del cambio corren por cuenta del cliente salvo que el motivo sea un defecto de fabricación.`,
+          },
+          {
+            title: '9. Contacto',
             body: `Para cualquier consulta sobre privacidad o términos escríbenos a hola@mantisjoyas.cl.`,
           },
         ].map(({ title, body }) => (

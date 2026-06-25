@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCartStore } from '@/hooks/useCart'
+import BuscadorOverlay from '@/components/busqueda/BuscadorOverlay'
 
 const NAV_LINKS = [
   { href: '/pulseras',      label: 'Pulseras' },
@@ -37,6 +38,7 @@ function CloseIcon() {
 export default function Nav() {
   const { totalItems, openCart } = useCartStore()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   return (
     <>
@@ -81,6 +83,19 @@ export default function Nav() {
 
         {/* Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Búsqueda */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+            aria-label="Buscar"
+            title="Buscar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="rgba(28,61,46,0.5)" strokeWidth="1.5" />
+              <path d="M16.5 16.5L21 21" stroke="rgba(28,61,46,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+
           {/* Wishlist */}
           <Link
             href="/wishlist"
@@ -119,6 +134,8 @@ export default function Nav() {
           </button>
         </div>
       </nav>
+
+      <BuscadorOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile menu overlay */}
       {menuOpen && (

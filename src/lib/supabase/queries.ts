@@ -25,17 +25,20 @@ export async function getProductosByCategoria(slug: string): Promise<Product[]> 
 
   const { data, error } = await supabase
     .from('productos')
-    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, imagenes_producto(url, alt, es_principal)')
+    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, imagenes_producto(url, alt, es_principal), variantes(stock, activa)')
     .eq('categoria_id', cat.id)
     .eq('activo', true)
     .order('orden', { ascending: true })
 
   if (error) throw error
 
+  type VarianteStockRow = { stock: number; activa: boolean }
   return (data ?? []).map(p => {
     const fromJoin = imagenPrincipal((p.imagenes_producto ?? []) as ImagenRow[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const directUrl = (p as any).imagen_url as string | null | undefined
+    const variantes = ((p.variantes ?? []) as VarianteStockRow[]).filter(v => v.activa)
+    const agotado = variantes.length > 0 && variantes.every(v => v.stock === 0)
     return {
       id: p.id,
       slug: p.slug,
@@ -48,6 +51,7 @@ export async function getProductosByCategoria(slug: string): Promise<Product[]> 
       categoria_slug: slug,
       imagen_url: directUrl ?? fromJoin.imagen_url,
       imagen_alt: fromJoin.imagen_alt,
+      agotado,
     }
   })
 }
@@ -141,6 +145,8 @@ export interface DatosOrden {
   costo_despacho: number
   total: number
   cupon_codigo?: string
+  es_regalo?: boolean
+  mensaje_regalo?: string
   items: ItemCarrito[]
 }
 
@@ -162,6 +168,8 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
       costo_despacho: datos.costo_despacho,
       total: datos.total,
       cupon_codigo: datos.cupon_codigo ?? null,
+      es_regalo: datos.es_regalo ?? false,
+      mensaje_regalo: datos.mensaje_regalo ?? null,
     })
     .select('id, numero')
     .single()
@@ -172,7 +180,7 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
     .from('orden_items')
     .insert(datos.items.map(item => ({
       orden_id: orden.id,
-      producto_id: item.product.id,
+      producto_id: item.product.id.startsWith('custom-') ? null : item.product.id,
       nombre: item.product.nombre,
       variante: item.variante ?? null,
       precio: item.product.precio,
@@ -181,6 +189,46 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
     })))
 
   if (itemsError) throw itemsError
+
+  // ── Decrementar stock de variantes ──────────────────────────────────────────
+  const itemsConStock = datos.items.filter(
+    item => !item.product.id.startsWith('custom-') && item.variante
+  )
+  if (itemsConStock.length > 0) {
+    const variantesActuales = await Promise.all(
+      itemsConStock.map(item =>
+        supabase
+          .from('variantes')
+          .select('id, stock')
+          .eq('producto_id', item.product.id)
+          .eq('nombre', item.variante as string)
+          .single()
+      )
+    )
+    await Promise.all(
+      variantesActuales.map(({ data: v }, i) => {
+        if (!v) return Promise.resolve()
+        const nuevoStock = Math.max(0, v.stock - itemsConStock[i].cantidad)
+        return supabase.from('variantes').update({ stock: nuevoStock }).eq('id', v.id)
+      })
+    )
+  }
+
+  // ── Incrementar usos del cupón ───────────────────────────────────────────────
+  if (datos.cupon_codigo) {
+    const codigo = datos.cupon_codigo.toUpperCase().trim()
+    const { data: cupon } = await supabase
+      .from('cupones')
+      .select('usos_actuales')
+      .eq('codigo', codigo)
+      .single()
+    if (cupon) {
+      await supabase
+        .from('cupones')
+        .update({ usos_actuales: cupon.usos_actuales + 1 })
+        .eq('codigo', codigo)
+    }
+  }
 
   return orden
 }
@@ -236,12 +284,55 @@ export async function validarCupon(
   return { descuento, cupon_id: cupon.id }
 }
 
+// ─── Reseñas ──────────────────────────────────────────────────────────────────
+
+export interface Resena {
+  id: string
+  nombre_cliente: string
+  calificacion: number
+  texto: string
+  fecha: string
+}
+
+export async function getResenasByProducto(producto_id: string): Promise<Resena[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('resenas')
+    .select('id, nombre_cliente, calificacion, texto, fecha')
+    .eq('producto_id', producto_id)
+    .eq('aprobada', true)
+    .order('fecha', { ascending: false })
+  return (data ?? []) as Resena[]
+}
+
+export async function crearResena(data: {
+  producto_id: string
+  nombre_cliente: string
+  email: string
+  texto: string
+  calificacion: number
+}): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await supabase.from('resenas').insert({
+    producto_id: data.producto_id,
+    nombre_cliente: data.nombre_cliente,
+    email: data.email,
+    texto: data.texto,
+    calificacion: data.calificacion,
+    aprobada: false,
+  })
+  if (error) throw error
+}
+
 // ─── Newsletter ───────────────────────────────────────────────────────────────
 
 export async function suscribirNewsletter(email: string): Promise<void> {
   const supabase = createServiceClient()
   const { error } = await supabase
     .from('suscriptores')
-    .upsert({ email, activo: true }, { onConflict: 'email' })
+    .upsert(
+      { email, activo: true, fecha_suscripcion: new Date().toISOString() },
+      { onConflict: 'email' }
+    )
   if (error) throw error
 }

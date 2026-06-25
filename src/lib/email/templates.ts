@@ -26,7 +26,14 @@ const emailTrf = process.env.BANK_EMAIL ?? 'pagos@mantisjoyas.cl'
 
 // ── Shared layout ─────────────────────────────────────────────────────────────
 
-function wrap(content: string): string {
+const BASE_URL = process.env.NEXT_PUBLIC_URL ?? 'https://mantisjoyas.cl'
+
+function unsubscribeLink(email: string): string {
+  const url = `${BASE_URL}/api/newsletter/desuscribir?email=${encodeURIComponent(email)}`
+  return `<p style="margin:10px 0 0;font-size:10px;color:${gris};">¿No quieres recibir más emails? <a href="${url}" style="color:${gris};">Desuscribirse</a></p>`
+}
+
+function wrap(content: string, subscriberEmail?: string): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -59,6 +66,7 @@ function wrap(content: string): string {
           <td style="background:#EDE5D4;padding:24px 40px;text-align:center;border-top:0.5px solid rgba(28,61,46,0.12);">
             <p style="margin:0 0 6px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${gris};">mantisjoyas.cl</p>
             <p style="margin:0;font-size:10px;color:${gris};">Joyas bañadas en oro · Hechas con amor en Chile</p>
+            ${subscriberEmail ? unsubscribeLink(subscriberEmail) : ''}
           </td>
         </tr>
 
@@ -230,7 +238,60 @@ export function emailAdmin(d: DatosEmailPedido & { cliente_telefono?: string; di
   return wrap(content)
 }
 
-// ── Email 3: Pedido despachado ────────────────────────────────────────────────
+// ── Email 3: Solicitud de reseña ─────────────────────────────────────────────
+
+export interface ItemResena {
+  nombre: string
+  slug: string
+}
+
+export function emailSolicitudResena(d: {
+  numero: number
+  cliente_nombre: string
+  items: ItemResena[]
+}): string {
+  const productosHtml = d.items.map(item => `
+    <tr>
+      <td style="padding:14px 0;border-bottom:0.5px solid rgba(28,61,46,0.08);">
+        <div style="font-size:14px;color:${verde};margin-bottom:10px;">${item.nombre}</div>
+        <a href="${BASE_URL}/producto/${item.slug}#resena"
+           style="display:inline-block;background:transparent;color:${dorado};border:0.5px solid ${dorado};padding:8px 20px;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;text-decoration:none;">
+          Dejar reseña →
+        </a>
+      </td>
+    </tr>`).join('')
+
+  const content = `
+    ${h1('¿Cómo llegó tu joya? ✨')}
+    ${label(numOrden(d.numero))}
+
+    <p style="margin:0 0 24px;font-size:14px;color:${verde};line-height:1.8;">
+      Hola ${d.cliente_nombre}, esperamos que tu joya haya llegado perfecta y que la estés disfrutando mucho.<br/>
+      Tu opinión es muy importante para nosotras — ¿nos cuentas cómo fue la experiencia?
+    </p>
+
+    ${divider()}
+    ${sectionTitle('Tus joyas')}
+
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tbody>${productosHtml}</tbody>
+    </table>
+
+    ${divider()}
+
+    <p style="margin:0;font-size:13px;color:${gris};line-height:1.8;">
+      Tus reseñas ayudan a otras clientas a conocer nuestras joyas y nos motivan a seguir creando con amor.
+    </p>
+
+    <p style="margin:24px 0 0;font-size:14px;color:${verde};line-height:1.8;">
+      Con cariño,<br/>
+      <em>El equipo MANTIS</em>
+    </p>
+  `
+  return wrap(content)
+}
+
+// ── Email 4: Pedido despachado ────────────────────────────────────────────────
 
 export function emailDespachado(d: { numero: number; cliente_nombre: string; courier?: string | null }): string {
   const content = `

@@ -3,12 +3,18 @@ import {
   emailConfirmacion,
   emailAdmin,
   emailDespachado,
+  emailSolicitudResena,
   type DatosEmailPedido,
+  type ItemResena,
 } from './templates'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'MANTIS <onboarding@resend.dev>'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+
+// TODO: eliminar cuando el dominio esté verificado en Resend
+const TEST_EMAIL = 'benjamin.orregod@sansano.usm.cl'
+const buyerTo = (email: string) => TEST_EMAIL ?? email
 
 function numOrden(n: number) {
   return 'MAN-' + String(n).padStart(4, '0')
@@ -17,7 +23,7 @@ function numOrden(n: number) {
 export async function enviarConfirmacionPedido(datos: DatosEmailPedido) {
   const { error } = await resend.emails.send({
     from: FROM,
-    to: datos.cliente_email,
+    to: buyerTo(datos.cliente_email),
     subject: `Tu pedido Mantis fue recibido 🌿 ${numOrden(datos.numero)}`,
     html: emailConfirmacion(datos),
   })
@@ -43,6 +49,21 @@ export async function enviarNotificacionAdmin(
   if (error) console.error('[email] admin:', error)
 }
 
+export async function enviarSolicitudResena(datos: {
+  numero: number
+  cliente_nombre: string
+  cliente_email: string
+  items: ItemResena[]
+}) {
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: buyerTo(datos.cliente_email),
+    subject: `¿Cómo llegó tu joya Mantis? ✨`,
+    html: emailSolicitudResena(datos),
+  })
+  if (error) console.error('[email] resena:', error)
+}
+
 export async function enviarDespachado(datos: {
   numero: number
   cliente_nombre: string
@@ -51,7 +72,7 @@ export async function enviarDespachado(datos: {
 }) {
   const { error } = await resend.emails.send({
     from: FROM,
-    to: datos.cliente_email,
+    to: buyerTo(datos.cliente_email),
     subject: `Tu pedido Mantis fue despachado 📦`,
     html: emailDespachado(datos),
   })

@@ -36,6 +36,10 @@ const PREGUNTAS = [
     a: 'Por ahora solo vendemos online. Seguimos creciendo — si quieres saber las novedades, suscríbete a nuestro newsletter o síguenos en Instagram.',
   },
   {
+    q: '¿Puedo arrepentirme de mi compra?',
+    a: 'Sí. Según la Ley del Consumidor (Ley N° 19.496, art. 3 bis), tienes derecho a retractarte de cualquier compra online dentro de los 10 días hábiles desde que recibiste el producto, sin dar explicaciones. Solo escríbenos a hola@mantisjoyas.cl con tu número de orden y coordinamos la devolución. El producto debe estar sin uso y en su empaque original.',
+  },
+  {
     q: '¿Cómo las contacto?',
     a: 'Por WhatsApp o por email a hola@mantisjoyas.cl. Respondemos de lunes a sábado en horario hábil.',
   },

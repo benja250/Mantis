@@ -13,6 +13,7 @@ export interface Product {
   imagen_alt?: string
   categoria?: string
   categoria_slug?: string
+  agotado?: boolean       // true cuando todas las variantes tienen stock = 0
 }
 
 export interface CartItem {

@@ -49,7 +49,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, stock, onOpenModal }: ProductCardProps) {
-  const { nombre, descripcion_corta, precio, precio_comparar, badge, badge_variant = 'default', imagen_url, imagen_alt, categoria_slug } = product
+  const { nombre, descripcion_corta, precio, precio_comparar, badge, badge_variant = 'default', imagen_url, imagen_alt, categoria_slug, agotado } = product
   const { has, toggle } = useWishlist()
   const { track } = useRecentlyViewed()
 
@@ -57,6 +57,7 @@ export default function ProductCard({ product, stock, onOpenModal }: ProductCard
   const wishOn = has(product.id)
 
   function handleOpen() {
+    if (agotado) return
     track(product)
     onOpenModal?.(product)
   }
@@ -64,7 +65,7 @@ export default function ProductCard({ product, stock, onOpenModal }: ProductCard
   return (
     <div
       className="product-card"
-      style={{ background: 'var(--crema)', cursor: 'pointer', transition: 'background 0.25s', position: 'relative' }}
+      style={{ background: 'var(--crema)', cursor: agotado ? 'default' : 'pointer', transition: 'background 0.25s', position: 'relative', opacity: agotado ? 0.75 : 1 }}
       onClick={handleOpen}
     >
       {/* Imagen */}
@@ -91,7 +92,24 @@ export default function ProductCard({ product, stock, onOpenModal }: ProductCard
           <PlaceholderSVG categoria={categoria_slug} />
         )}
 
-        {badge && (
+        {agotado && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(245,240,232,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{
+              background: 'rgba(28,61,46,0.85)',
+              color: 'var(--crema)',
+              fontSize: '9px', letterSpacing: '0.26em', textTransform: 'uppercase',
+              padding: '7px 18px', fontFamily: 'var(--ff-sans)',
+            }}>
+              Agotado
+            </span>
+          </div>
+        )}
+
+        {!agotado && badge && (
           <div style={{
             position: 'absolute', top: '14px', left: '14px',
             fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase',
@@ -159,18 +177,27 @@ export default function ProductCard({ product, stock, onOpenModal }: ProductCard
               </span>
             )}
           </div>
-          <button
-            className="add-btn"
-            onClick={e => { e.stopPropagation(); handleOpen() }}
-            style={{
-              background: 'none', border: '0.5px solid rgba(28,61,46,0.25)',
-              color: 'var(--verde)', padding: '8px 16px', fontSize: '10px',
-              letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer',
-              fontFamily: 'var(--ff-sans)', transition: 'all 0.2s',
-            }}
-          >
-            + Agregar
-          </button>
+          {agotado ? (
+            <span style={{
+              fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase',
+              color: '#3a6b52', opacity: 0.5, fontFamily: 'var(--ff-sans)',
+            }}>
+              Agotado
+            </span>
+          ) : (
+            <button
+              className="add-btn"
+              onClick={e => { e.stopPropagation(); handleOpen() }}
+              style={{
+                background: 'none', border: '0.5px solid rgba(28,61,46,0.25)',
+                color: 'var(--verde)', padding: '8px 16px', fontSize: '10px',
+                letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer',
+                fontFamily: 'var(--ff-sans)', transition: 'all 0.2s',
+              }}
+            >
+              + Agregar
+            </button>
+          )}
         </div>
       </div>
     </div>

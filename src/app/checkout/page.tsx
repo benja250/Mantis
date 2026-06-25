@@ -149,28 +149,31 @@ export default function CheckoutPage() {
     if (!validateComprobante()) return
     setLoading(true)
     try {
-      const fd = new FormData()
-      fd.append('nombre', form.nombre)
-      fd.append('email', form.email)
-      fd.append('telefono', form.telefono)
-      fd.append('direccion', form.direccion)
-      fd.append('ciudad', form.ciudad)
-      fd.append('region', form.region)
-      fd.append('courier', courier?.courier ?? '')
-      fd.append('cupon', cupon.trim())
-      fd.append('subtotal', String(totalPrice))
-      fd.append('descuento', String(descuento))
-      fd.append('costo_despacho', String(costoEnvio))
-      fd.append('total', String(total))
-      fd.append('es_regalo', String(form.esRegalo))
-      fd.append('mensaje_regalo', form.mensajeRegalo)
-      fd.append('items', JSON.stringify(items.map(i => ({
-        producto_id: i.product.id, nombre: i.product.nombre,
-        variante: i.variante, precio: i.product.precio, cantidad: i.cantidad,
-      }))))
-      if (comprobante) fd.append('comprobante', comprobante)
-
-      const res = await fetch('/api/checkout', { method: 'POST', body: fd })
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: form.nombre,
+          email: form.email,
+          telefono: form.telefono,
+          direccion: form.direccion,
+          ciudad: form.ciudad,
+          region: form.region,
+          courier: courier?.courier ?? '',
+          cupon: cupon.trim(),
+          subtotal: totalPrice,
+          descuento,
+          costo_despacho: costoEnvio,
+          total,
+          es_regalo: form.esRegalo,
+          mensaje_regalo: form.mensajeRegalo,
+          items: items.map(i => ({
+            product: { id: i.product.id, nombre: i.product.nombre, precio: i.product.precio },
+            variante: i.variante,
+            cantidad: i.cantidad,
+          })),
+        }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Error al procesar el pedido')
       clearCart()

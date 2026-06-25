@@ -12,60 +12,113 @@ export default async function ExitoPage({ searchParams }: Props) {
 
   return (
     <main style={{
-      minHeight: '70vh',
+      minHeight: '80vh',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '80px 48px',
+      padding: '80px 24px',
+      background: 'var(--crema)',
       textAlign: 'center',
     }}>
-      {/* Ícono */}
+      {/* Ícono check dorado */}
       <div style={{
-        width: '64px', height: '64px',
-        border: '0.5px solid var(--dorado)',
+        width: '80px',
+        height: '80px',
+        border: '1px solid var(--dorado)',
         borderRadius: '50%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '36px',
+        background: 'rgba(160,120,48,0.04)',
       }}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M5 12l4 4 10-10" stroke="#A07830" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+          <path
+            d="M7 17l7 7 13-13"
+            stroke="#A07830"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
 
       {/* Etiqueta */}
       <div style={{
-        fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-        color: 'var(--dorado)', marginBottom: '16px',
+        fontSize: '9px',
+        letterSpacing: '0.32em',
+        textTransform: 'uppercase',
+        color: 'var(--dorado)',
+        marginBottom: '18px',
       }}>
-        Pago recibido
+        Pedido recibido
       </div>
 
       {/* Título */}
       <h1 style={{
-        fontFamily: 'var(--ff-serif)', fontSize: '44px', fontWeight: 300,
-        color: 'var(--verde)', lineHeight: 1.1, marginBottom: '16px',
+        fontFamily: 'var(--ff-serif)',
+        fontSize: 'clamp(38px, 5vw, 58px)',
+        fontWeight: 300,
+        color: 'var(--verde)',
+        lineHeight: 1.1,
+        marginBottom: '24px',
       }}>
         ¡Gracias por tu compra!
       </h1>
 
-      {/* Número de orden */}
+      {/* Número de orden destacado */}
       {orden && (
-        <p style={{
-          fontFamily: 'var(--ff-serif)', fontSize: '17px', fontStyle: 'italic',
-          color: '#3a6b52', marginBottom: '12px',
+        <div style={{
+          marginBottom: '28px',
+          padding: '20px 40px',
+          border: '0.5px solid rgba(160,120,48,0.3)',
+          background: 'rgba(160,120,48,0.04)',
         }}>
-          Tu número de pedido es{' '}
-          <strong style={{ fontStyle: 'normal', color: 'var(--verde)' }}>#{orden}</strong>
-        </p>
+          <div style={{
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: '#3a6b52',
+            marginBottom: '8px',
+            fontFamily: 'var(--ff-sans)',
+          }}>
+            Número de pedido
+          </div>
+          <div style={{
+            fontFamily: 'var(--ff-serif)',
+            fontSize: 'clamp(36px, 5vw, 52px)',
+            fontWeight: 300,
+            color: 'var(--dorado)',
+            letterSpacing: '0.04em',
+            lineHeight: 1,
+          }}>
+            #{orden}
+          </div>
+        </div>
       )}
 
       <p style={{
-        fontSize: '13px', color: '#3a6b52', lineHeight: 1.8,
-        maxWidth: '420px', marginBottom: '48px',
+        fontSize: '14px',
+        color: '#3a6b52',
+        lineHeight: 1.9,
+        maxWidth: '440px',
+        marginBottom: '12px',
+        fontFamily: 'var(--ff-sans)',
       }}>
-        Te enviaremos un email de confirmación con los detalles de tu pedido
-        y el número de seguimiento cuando sea despachado.
+        Te enviamos un email de confirmación con los detalles de tu pedido.
+      </p>
+      <p style={{
+        fontSize: '13px',
+        color: '#3a6b52',
+        lineHeight: 1.8,
+        maxWidth: '440px',
+        marginBottom: '48px',
+        fontFamily: 'var(--ff-sans)',
+        opacity: 0.75,
+      }}>
+        Cuando tu pedido sea despachado, recibirás otro email con el número de seguimiento.
+        Nos tomará entre 1 y 2 días hábiles procesar tu transferencia.
       </p>
 
       {modo === 'dev' && (
@@ -83,22 +136,27 @@ export default async function ExitoPage({ searchParams }: Props) {
       )}
 
       {/* CTAs */}
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
         <Link href="/pulseras" style={{
-          background: 'var(--verde)', color: 'var(--crema)',
-          padding: '13px 30px',
-          fontFamily: 'var(--ff-sans)', fontSize: '10px',
-          letterSpacing: '0.24em', textTransform: 'uppercase',
+          background: 'var(--verde)',
+          color: 'var(--crema)',
+          padding: '14px 36px',
+          fontFamily: 'var(--ff-sans)',
+          fontSize: '10px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
           textDecoration: 'none',
         }}>
           Seguir comprando
         </Link>
-        <Link href="/" style={{
-          fontSize: '10px', letterSpacing: '0.2em',
-          textTransform: 'uppercase', color: 'var(--dorado)',
-          textDecoration: 'none', opacity: 0.8,
+        <Link href="/seguimiento" style={{
+          fontSize: '10px',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: 'var(--dorado)',
+          textDecoration: 'none',
         }}>
-          Ir al inicio
+          Rastrear pedido →
         </Link>
       </div>
     </main>

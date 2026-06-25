@@ -6,7 +6,7 @@ import type { User } from '@supabase/supabase-js'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Section = 'productos' | 'ordenes' | 'inventario' | 'cupones' | 'notificaciones' | 'acceso'
+type Section = 'productos' | 'ordenes' | 'inventario' | 'cupones' | 'notificaciones' | 'resenas' | 'acceso'
 
 type PanelMode =
   | { type: 'nuevo-producto' }
@@ -20,7 +20,7 @@ interface Producto {
   id: string; slug: string; nombre: string; precio: number
   precio_comparar?: number; badge?: string; activo: boolean
   stock_total: number; categoria: string; categoria_id?: string
-  descripcion_corta?: string
+  categoria_slug?: string; descripcion_corta?: string; imagen_url?: string
 }
 
 interface OrdenItem {
@@ -203,14 +203,15 @@ function SeccionProductos({
     setLoading(true)
     const { data } = await sb
       .from('productos')
-      .select('id, slug, nombre, precio, precio_comparar, badge, activo, descripcion_corta, categorias(id, nombre), variantes(stock, activa)')
+      .select('id, slug, nombre, precio, precio_comparar, badge, activo, descripcion_corta, imagen_url, categorias(id, nombre, slug), variantes(stock, activa)')
       .order('nombre')
     setProductos((data ?? []).map((p: any) => ({
       id: p.id, slug: p.slug, nombre: p.nombre, precio: p.precio,
       precio_comparar: p.precio_comparar, badge: p.badge, activo: p.activo,
-      descripcion_corta: p.descripcion_corta,
+      descripcion_corta: p.descripcion_corta, imagen_url: p.imagen_url ?? '',
       categoria: p.categorias?.nombre ?? '',
       categoria_id: p.categorias?.id ?? '',
+      categoria_slug: p.categorias?.slug ?? '',
       stock_total: (p.variantes ?? []).filter((v: any) => v.activa).reduce((s: number, v: any) => s + (v.stock || 0), 0),
     })))
     setLoading(false)
@@ -414,6 +415,13 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ orden_id: o.id }),
                           }).catch(err => console.error('[despachar email]', err))
+                        }
+                        if (nuevo === 'entregado') {
+                          globalThis.fetch('/api/ordenes/solicitar-resena', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orden_id: o.id }),
+                          }).catch(err => console.error('[resena email]', err))
                         }
                       }}
                       style={{ fontFamily:'var(--ff-sans)', fontSize:'10px', letterSpacing:'0.09em', textTransform:'uppercase', border:'0.5px solid rgba(28,61,46,.17)', background:'transparent', color:'var(--verde)', padding:'4px 7px', cursor:'pointer', appearance:'none', outline:'none' }}
@@ -660,6 +668,145 @@ function SeccionNotificaciones({ onSetAction }: { onSetAction: (el: React.ReactN
   )
 }
 
+// ── Sección Reseñas ───────────────────────────────────────────────────────────
+
+interface ResenaAdmin {
+  id: string
+  producto_id: string
+  producto_nombre?: string
+  nombre_cliente: string
+  email: string
+  calificacion: number
+  texto: string
+  aprobada: boolean
+  fecha: string
+}
+
+function SeccionResenas({ onSetAction, showToast }: {
+  onSetAction: (el: React.ReactNode) => void
+  showToast: (msg: string, err?: boolean) => void
+}) {
+  const sb = createClient()
+  const [resenas, setResenas] = useState<ResenaAdmin[]>([])
+  const [cargando, setCargando] = useState(true)
+  const [filtro, setFiltro] = useState<'pendientes' | 'aprobadas' | 'todas'>('pendientes')
+
+  const cargar = useCallback(async () => {
+    setCargando(true)
+    let q = sb.from('resenas')
+      .select('id, producto_id, nombre_cliente, email, calificacion, texto, aprobada, fecha, productos(nombre)')
+      .order('fecha', { ascending: false })
+    if (filtro === 'pendientes') q = q.eq('aprobada', false) as typeof q
+    else if (filtro === 'aprobadas') q = q.eq('aprobada', true) as typeof q
+    const { data } = await q
+    setResenas((data ?? []).map((r: Record<string, unknown>) => ({
+      ...r,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      producto_nombre: (r.productos as any)?.nombre ?? 'Producto desconocido',
+    })) as ResenaAdmin[])
+    setCargando(false)
+  }, [sb, filtro])
+
+  useEffect(() => { cargar() }, [cargar])
+  useEffect(() => { onSetAction(null); return () => onSetAction(null) }, [onSetAction])
+
+  async function aprobar(id: string) {
+    await sb.from('resenas').update({ aprobada: true }).eq('id', id)
+    showToast('Reseña aprobada')
+    cargar()
+  }
+
+  async function eliminar(id: string) {
+    await sb.from('resenas').delete().eq('id', id)
+    showToast('Reseña eliminada')
+    cargar()
+  }
+
+  const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n)
+
+  return (
+    <div>
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        {(['pendientes', 'aprobadas', 'todas'] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFiltro(f)}
+            style={{
+              padding: '6px 14px', border: '0.5px solid rgba(28,61,46,0.2)',
+              background: filtro === f ? 'var(--verde)' : 'none',
+              color: filtro === f ? 'var(--crema)' : 'var(--verde)',
+              fontFamily: 'var(--ff-sans)', fontSize: '10px', letterSpacing: '0.12em',
+              textTransform: 'capitalize', cursor: 'pointer',
+            }}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {cargando ? (
+        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.4, fontSize: '13px' }}>Cargando...</div>
+      ) : resenas.length === 0 ? (
+        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>
+          <p style={{ fontSize: '14px', fontFamily: 'var(--ff-serif)' }}>No hay reseñas {filtro === 'pendientes' ? 'pendientes' : filtro === 'aprobadas' ? 'aprobadas' : ''}</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {resenas.map(r => (
+            <div key={r.id} style={{
+              background: r.aprobada ? '#f6faf8' : '#fffaf2',
+              border: `0.5px solid ${r.aprobada ? 'rgba(28,61,46,0.1)' : 'rgba(160,120,48,0.25)'}`,
+              padding: '16px 20px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div>
+                  <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '16px', color: 'var(--verde)' }}>{r.nombre_cliente}</span>
+                  <span style={{ marginLeft: '8px', fontSize: '11px', color: '#3a6b52', opacity: 0.6 }}>{r.email}</span>
+                  <div style={{ marginTop: '2px' }}>
+                    <span style={{ color: '#A07830', fontSize: '13px', letterSpacing: '2px' }}>{stars(r.calificacion)}</span>
+                    <span style={{ marginLeft: '8px', fontSize: '10px', color: '#3a6b52', opacity: 0.5 }}>
+                      {new Date(r.fecha).toLocaleDateString('es-CL')}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  {!r.aprobada && (
+                    <button
+                      onClick={() => aprobar(r.id)}
+                      style={{
+                        background: 'var(--verde)', color: 'var(--crema)', border: 'none',
+                        padding: '6px 14px', fontSize: '10px', letterSpacing: '0.12em',
+                        textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--ff-sans)',
+                      }}
+                    >
+                      Aprobar
+                    </button>
+                  )}
+                  <button
+                    onClick={() => eliminar(r.id)}
+                    style={{
+                      background: 'none', color: '#C0392B', border: '0.5px solid #C0392B',
+                      padding: '6px 14px', fontSize: '10px', letterSpacing: '0.12em',
+                      textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--ff-sans)',
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+              <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 1.7, margin: 0 }}>{r.texto}</p>
+              <div style={{ marginTop: '8px', fontSize: '10px', color: '#3a6b52', opacity: 0.5 }}>
+                Producto: {r.producto_nombre}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Sección Acceso ────────────────────────────────────────────────────────────
 
 function SeccionAcceso({ onSetAction, user }: { onSetAction: (el: React.ReactNode) => void; user: User }) {
@@ -708,6 +855,12 @@ function PanelBody({
   const [pBadge, setPBadge] = useState(prod?.badge ?? '')
   const [pDesc, setPDesc] = useState(prod?.descripcion_corta ?? '')
   const [pActivo, setPActivo] = useState(prod?.activo ?? true)
+  // Image state — baseFilename ensures main+preview share the same storage key
+  const [baseFilename] = useState(() => String(Date.now()))
+  const [pImagenUrl, setPImagenUrl] = useState(prod?.imagen_url ?? '')
+  const [pPreviewUrl, setPPreviewUrl] = useState('')
+  const [uploadingMain, setUploadingMain] = useState(false)
+  const [uploadingPreview, setUploadingPreview] = useState(false)
 
   // Stock form state
   const var_ = mode?.type === 'editar-stock' ? mode.variante : null
@@ -741,6 +894,7 @@ function PanelBody({
       badge: pBadge || null,
       descripcion_corta: pDesc.trim() || null,
       activo: pActivo,
+      ...(pImagenUrl ? { imagen_url: pImagenUrl } : {}),
     }
     if (m.type === 'editar-producto') {
       const { error } = await sb.from('productos').update(payload).eq('id', m.producto.id)
@@ -798,18 +952,82 @@ function PanelBody({
         body: JSON.stringify({ orden_id: orden.id }),
       }).catch(err => console.error('[despachar email]', err))
     }
+    if (estado === 'entregado') {
+      fetch('/api/ordenes/solicitar-resena', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orden_id: orden.id }),
+      }).catch(err => console.error('[resena email]', err))
+    }
   }
 
   // Render panel body content
   if (mode.type === 'nuevo-producto' || mode.type === 'editar-producto') {
+    const catSlug = cats.find(c => c.id === pCatId)?.slug ?? prod?.categoria_slug ?? ''
+    const esDije = catSlug === 'dijes'
+    const esPulsera = catSlug === 'pulseras'
+
+    async function uploadMain(file: File) {
+      if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
+      setUploadingMain(true)
+      const folder = esDije ? 'dijes' : (catSlug || 'general')
+      const { error } = await sb.storage
+        .from('productos')
+        .upload(`${folder}/${baseFilename}`, file, { upsert: true, contentType: file.type })
+      if (error) { showToast('Error al subir imagen: ' + error.message, true); setUploadingMain(false); return }
+      const { data } = sb.storage.from('productos').getPublicUrl(`${folder}/${baseFilename}`)
+      setPImagenUrl(data.publicUrl)
+      setUploadingMain(false)
+    }
+
+    async function uploadPreview(file: File) {
+      if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
+      setUploadingPreview(true)
+      const { error } = await sb.storage
+        .from('productos')
+        .upload(`dijes-preview/${baseFilename}`, file, { upsert: true, contentType: file.type })
+      if (error) { showToast('Error al subir preview: ' + error.message, true); setUploadingPreview(false); return }
+      const { data } = sb.storage.from('productos').getPublicUrl(`dijes-preview/${baseFilename}`)
+      setPPreviewUrl(data.publicUrl)
+      setUploadingPreview(false)
+    }
+
+    function ZonaImagen({ label, url, uploading, onChange, hint, accept = 'image/*' }: {
+      label: string; url: string; uploading: boolean
+      onChange: (f: File) => void; hint?: string; accept?: string
+    }) {
+      return (
+        <div style={{ marginBottom: '14px' }}>
+          <label style={S.lbl}>{label}</label>
+          <label style={{
+            border: '0.5px dashed rgba(28,61,46,.22)', padding: '14px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+            cursor: 'pointer', color: '#3a6b52', textAlign: 'center',
+            background: 'var(--crema-dark)', transition: 'background .15s',
+          }}>
+            <input type="file" accept={accept} style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) onChange(f); e.target.value = '' }} />
+            {uploading ? (
+              <div style={{ fontSize: '11px', opacity: 0.6 }}>Subiendo…</div>
+            ) : url ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                <img src={url} alt="" style={{ width: '72px', height: '72px', objectFit: 'cover', display: 'block', border: '0.5px solid rgba(28,61,46,.15)' }} />
+                <div style={{ fontSize: '9px', color: 'rgba(28,61,46,.45)', letterSpacing: '0.12em' }}>Clic para cambiar</div>
+              </div>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 14V6M7 9l3-3 3 3" stroke="#3a6b52" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.5 14v1.5a2 2 0 002 2h11a2 2 0 002-2V14" stroke="#3a6b52" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                <div style={{ fontSize: '11px', letterSpacing: '0.08em' }}>Arrastra o haz clic</div>
+                {hint && <div style={{ fontSize: '9px', color: 'rgba(28,61,46,.38)' }}>{hint}</div>}
+              </>
+            )}
+          </label>
+        </div>
+      )
+    }
+
     return (
       <div>
-        <div style={{ border:'0.5px dashed rgba(28,61,46,.22)', padding:'22px', display:'flex', flexDirection:'column', alignItems:'center', gap:'5px', cursor:'pointer', marginBottom:'14px', color:'#3a6b52', textAlign:'center' }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 14V6M7 9l3-3 3 3" stroke="#3a6b52" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.5 14v1.5a2 2 0 002 2h11a2 2 0 002-2V14" stroke="#3a6b52" strokeWidth="1.3" strokeLinecap="round"/></svg>
-          <div style={{ fontSize:'11px', letterSpacing:'0.1em' }}>Arrastra una imagen o haz clic</div>
-          <div style={{ fontSize:'10px', color:'rgba(28,61,46,.33)' }}>JPG, PNG o WEBP · Máx 5MB</div>
-        </div>
-
         <label style={S.lbl}>Nombre del producto</label>
         <input style={S.inp} value={pNombre} onChange={e => setPNombre(e.target.value)} placeholder="Ej: Pulsera Charm Dorada" />
 
@@ -838,13 +1056,49 @@ function PanelBody({
         <label style={S.lbl}>Descripción corta</label>
         <textarea style={S.ta} value={pDesc} onChange={e => setPDesc(e.target.value)} />
 
+        {/* ── Imágenes ── */}
+        <div style={{ borderTop: '0.5px solid rgba(28,61,46,.07)', marginTop: '4px', paddingTop: '14px' }}>
+          {esDije ? (
+            <>
+              <ZonaImagen
+                label="Imagen normal (con fondo — para card de selección)"
+                url={pImagenUrl}
+                uploading={uploadingMain}
+                onChange={uploadMain}
+                hint="JPG o WEBP · Máx 5MB"
+              />
+              <ZonaImagen
+                label="Imagen preview (sin fondo PNG — para preview de pulsera)"
+                url={pPreviewUrl}
+                uploading={uploadingPreview}
+                onChange={uploadPreview}
+                accept="image/png"
+                hint="Solo PNG transparente · Máx 5MB"
+              />
+              {pImagenUrl && !pPreviewUrl && (
+                <div style={{ fontSize:'10px', color:'#d35400', marginBottom:'10px' }}>
+                  ⚠ Sin imagen preview — el dije no se mostrará en el compositor
+                </div>
+              )}
+            </>
+          ) : (
+            <ZonaImagen
+              label={esPulsera ? 'Imagen de la pulsera (también usada en preview de /crear-pulsera)' : 'Imagen del producto'}
+              url={pImagenUrl}
+              uploading={uploadingMain}
+              onChange={uploadMain}
+              hint="JPG, PNG o WEBP · Máx 5MB"
+            />
+          )}
+        </div>
+
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 0', borderTop:'0.5px solid rgba(28,61,46,.07)' }}>
           <span style={{ fontSize:'12px', letterSpacing:'0.07em' }}>Visible en la tienda</span>
           <Toggle on={pActivo} onChange={setPActivo} />
         </div>
 
-        <button onClick={guardarProducto} disabled={loading} style={{ ...S.btnPrim, width:'100%', justifyContent:'center', padding:'12px', marginTop:'16px', opacity: loading ? 0.7 : 1 }}>
-          {loading ? 'Guardando…' : mode.type === 'editar-producto' ? 'Guardar cambios' : 'Crear producto'}
+        <button onClick={guardarProducto} disabled={loading || uploadingMain || uploadingPreview} style={{ ...S.btnPrim, width:'100%', justifyContent:'center', padding:'12px', marginTop:'16px', opacity: (loading || uploadingMain || uploadingPreview) ? 0.7 : 1 }}>
+          {loading ? 'Guardando…' : uploadingMain || uploadingPreview ? 'Subiendo imagen…' : mode.type === 'editar-producto' ? 'Guardar cambios' : 'Crear producto'}
         </button>
       </div>
     )
@@ -967,7 +1221,7 @@ function PanelBody({
 
 const SECTION_LABELS: Record<Section, string> = {
   productos: 'Productos', ordenes: 'Órdenes', inventario: 'Inventario',
-  cupones: 'Cupones', notificaciones: 'Notificaciones', acceso: 'Acceso al panel',
+  cupones: 'Cupones', notificaciones: 'Notificaciones', resenas: 'Reseñas', acceso: 'Acceso al panel',
 }
 
 const NAV_ICONS: Record<Section, React.ReactNode> = {
@@ -976,6 +1230,7 @@ const NAV_ICONS: Record<Section, React.ReactNode> = {
   inventario:<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L13 4.5v5L7 13 1 9.5v-5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M7 1v12M1 4.5l6 3.5L13 4.5" stroke="currentColor" strokeWidth="1.1"/></svg>,
   cupones:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8 1.5H13V6.5L7 12.5a1.4 1.4 0 01-2 0L1 8.5a1.4 1.4 0 010-2L7 1.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><circle cx="10.5" cy="4" r=".9" fill="currentColor"/></svg>,
   notificaciones:<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a4 4 0 014 4v2l1 2H2l1-2v-2a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.1"/></svg>,
+  resenas:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l1.6 3.2 3.5.5-2.5 2.4.6 3.5L7 9.5l-3.2 1.6.6-3.5-2.5-2.4 3.5-.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>,
   acceso:    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.1"/><path d="M2 12.5c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
 }
 
@@ -1027,7 +1282,7 @@ function AdminShell({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
 
         <nav style={{ flex:1, paddingBottom:'8px' }}>
-          {(['productos','ordenes','inventario','cupones','notificaciones'] as Section[]).map(id => (
+          {(['productos','ordenes','inventario','cupones','notificaciones','resenas'] as Section[]).map(id => (
             <button
               key={id}
               onClick={() => setSection(id)}
@@ -1093,6 +1348,7 @@ function AdminShell({ user, onLogout }: { user: User; onLogout: () => void }) {
           {section === 'inventario'     && <SeccionInventario  key={`i-${refreshKey}`} {...sectionProps} />}
           {section === 'cupones'        && <SeccionCupones     key={`c-${refreshKey}`} {...sectionProps} />}
           {section === 'notificaciones' && <SeccionNotificaciones key={`n-${refreshKey}`} onSetAction={setTopbarAction} />}
+          {section === 'resenas'        && <SeccionResenas key={`r-${refreshKey}`} onSetAction={setTopbarAction} showToast={showToast} />}
           {section === 'acceso'         && <SeccionAcceso key="ac" onSetAction={setTopbarAction} user={user} />}
         </div>
       </div>

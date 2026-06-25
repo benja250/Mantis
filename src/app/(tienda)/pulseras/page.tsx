@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getProductosByCategoria } from '@/lib/supabase/queries'
-import CatalogoGrid from '@/components/productos/CatalogoGrid'
+import CatalogoConFiltros from '@/components/productos/CatalogoConFiltros'
 
 export const metadata: Metadata = { title: 'Pulseras — MANTIS' }
 
@@ -46,7 +46,7 @@ export default async function PulserasPage() {
         </span>
       </div>
 
-      <CatalogoGrid products={productos} />
+      <CatalogoConFiltros products={productos} />
     </main>
   )
 }

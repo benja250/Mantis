@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getProductoBySlug } from '@/lib/supabase/queries'
+import { getProductoBySlug, getResenasByProducto } from '@/lib/supabase/queries'
 import ProductDetail from '@/components/productos/ProductDetail'
+import ResenasList from '@/components/productos/ResenasList'
+import ResenaForm from '@/components/productos/ResenaForm'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -23,5 +25,15 @@ export default async function ProductoPage({ params }: Props) {
 
   if (!product) notFound()
 
-  return <ProductDetail product={product} />
+  const resenas = await getResenasByProducto(product.id).catch(() => [])
+
+  return (
+    <>
+      <ProductDetail product={product} />
+      <div id="resena">
+        <ResenasList resenas={resenas} />
+        <ResenaForm productoId={product.id} />
+      </div>
+    </>
+  )
 }
