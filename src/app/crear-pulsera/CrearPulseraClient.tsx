@@ -20,6 +20,11 @@ const LARGOS = [
 
 const PRECIO_BASE = 12990
 
+function getPreviewUrl(imagen_url: string | undefined): string | undefined {
+  if (!imagen_url) return undefined
+  return imagen_url.replace('/dijes/', '/dijes-preview/')
+}
+
 function PrevisualizacionPulsera({ cadena, dijesSeleccionados }: { cadena: string; dijesSeleccionados: Product[] }) {
   const chainStrokeWidth = cadena === 'snake' ? 7 : cadena === 'eslabones' ? 5 : 3
   const chainDash = cadena === 'eslabones' ? '12 6' : 'none'
@@ -36,15 +41,22 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados }: { cadena: strin
 
       {dijesSeleccionados.map((dije, i) => {
         const n = dijesSeleccionados.length
-        const step = n <= 1 ? 0 : Math.min(70, 200 / (n - 1))
+        const step = n <= 1 ? 0 : Math.min(60, 200 / (n - 1))
         const startX = n <= 1 ? 175 : 175 - (step * (n - 1)) / 2
         const x = startX + i * step
+        const previewUrl = getPreviewUrl(dije.imagen_url)
         return (
           <g key={`${dije.id}-${i}`}>
-            <line x1={x} y1="84" x2={x} y2="100" stroke="#A07830" strokeWidth="1.5" />
-            <circle cx={x} cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
-            <circle cx={x} cy="114" r="7" fill="none" stroke="#C8A96E" strokeWidth="1.2" />
-            <circle cx={x} cy="114" r="2.5" fill="#A07830" />
+            <line x1={x} y1="83" x2={x} y2="97" stroke="#A07830" strokeWidth="1" />
+            <circle cx={x} cy="97" r="2.5" fill="#A07830" />
+            {previewUrl ? (
+              <image href={previewUrl} x={x - 22} y={97} width={44} height={44} preserveAspectRatio="xMidYMid meet" />
+            ) : (
+              <>
+                <circle cx={x} cy="119" r="10" fill="none" stroke="#C8A96E" strokeWidth="1.2" />
+                <circle cx={x} cy="119" r="3" fill="#A07830" />
+              </>
+            )}
           </g>
         )
       })}
@@ -62,6 +74,8 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados }: { cadena: strin
 
 export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   const { addItem } = useCartStore()
+
+  console.log('[CrearPulsera] dijes desde Supabase:', dijes.map(d => ({ id: d.id, nombre: d.nombre, imagen_url: d.imagen_url })))
 
   const [step, setStep] = useState(1)
   const [cadena, setCadena] = useState<string | null>(null)
@@ -228,7 +242,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               {dijes.length === 0 ? (
                 <p style={{ fontSize: '13px', color: '#3a6b52' }}>No hay dijes disponibles en este momento.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'rgba(28,61,46,0.08)', marginBottom: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '50px', background: 'var(--crema-dark)', marginBottom: '24px' }}>
                   {dijes.map(d => {
                     const count = dijesSeleccionados.filter(s => s.id === d.id).length
                     return (

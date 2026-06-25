@@ -25,25 +25,31 @@ export async function getProductosByCategoria(slug: string): Promise<Product[]> 
 
   const { data, error } = await supabase
     .from('productos')
-    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagenes_producto(url, alt, es_principal)')
+    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, imagenes_producto(url, alt, es_principal)')
     .eq('categoria_id', cat.id)
     .eq('activo', true)
     .order('orden', { ascending: true })
 
   if (error) throw error
 
-  return (data ?? []).map(p => ({
-    id: p.id,
-    slug: p.slug,
-    nombre: p.nombre,
-    descripcion_corta: p.descripcion_corta,
-    precio: p.precio,
-    precio_comparar: p.precio_comparar ?? undefined,
-    badge: p.badge ?? undefined,
-    material: p.material ?? undefined,
-    categoria_slug: slug,
-    ...imagenPrincipal((p.imagenes_producto ?? []) as ImagenRow[]),
-  }))
+  return (data ?? []).map(p => {
+    const fromJoin = imagenPrincipal((p.imagenes_producto ?? []) as ImagenRow[])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const directUrl = (p as any).imagen_url as string | null | undefined
+    return {
+      id: p.id,
+      slug: p.slug,
+      nombre: p.nombre,
+      descripcion_corta: p.descripcion_corta,
+      precio: p.precio,
+      precio_comparar: p.precio_comparar ?? undefined,
+      badge: p.badge ?? undefined,
+      material: p.material ?? undefined,
+      categoria_slug: slug,
+      imagen_url: directUrl ?? fromJoin.imagen_url,
+      imagen_alt: fromJoin.imagen_alt,
+    }
+  })
 }
 
 export async function getProductoBySlug(slug: string): Promise<ProductDetail | null> {
