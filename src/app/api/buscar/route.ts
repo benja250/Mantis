@@ -11,12 +11,24 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  const { data, error } = await supabase
+  const { data: cat } = await supabase
+    .from('categorias')
+    .select('id')
+    .eq('slug', 'dijes')
+    .single()
+
+  let query = supabase
     .from('productos')
     .select('id, slug, nombre, precio, imagen_url, imagenes_producto(url, es_principal)')
     .eq('activo', true)
     .ilike('nombre', `%${q}%`)
     .limit(8)
+
+  if (cat) {
+    query = query.neq('categoria_id', cat.id) as typeof query
+  }
+
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json({ productos: [] })

@@ -13,7 +13,7 @@ const PREGUNTAS = [
   },
   {
     q: '¿Puedo cambiar mi pedido?',
-    a: 'Puedes pedir un cambio escribiéndonos por WhatsApp o email antes de que el pedido sea despachado. Una vez despachado, no es posible hacer cambios.',
+    a: 'Puedes solicitar cambios escribiéndonos por WhatsApp o email antes de que el pedido sea despachado. Una vez despachado, si quieres retractarte de la compra tienes 10 días desde que recibes el producto según la Ley del Consumidor (art. 3 bis Ley 19.496). El producto debe estar sin uso y en su empaque original. Escríbenos y lo coordinamos.',
   },
   {
     q: '¿Qué pasa si llega con defecto?',
