@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 const LINKS = [
-  { href: 'https://instagram.com/mantisjoyas', label: 'Instagram', external: true },
+  { href: 'https://www.instagram.com/mantisjoyeria_', label: 'Instagram', external: true },
   { href: 'https://wa.me/56900000000',         label: 'WhatsApp',  external: true },
   { href: '/despacho',                          label: 'Despacho',  external: false },
   { href: '/cuidados',                          label: 'Cuidados',  external: false },
