@@ -41,8 +41,8 @@ export default function BrandStory() {
           <path d="M8 3.5l1 2.8h3l-2.4 1.7.9 2.8L8 9l-2.5 1.8.9-2.8L4 6.3h3z" fill="#A07830" opacity="0.3" />
         </svg>
       ),
-      title: '30 días de garantía',
-      desc: 'Por fallas de fabricación, sin preguntas',
+      title: '48h para reportar defectos',
+      desc: 'De fabricación visibles al recibir tu pedido',
       onClick: () => setShowGarantia(true),
     },
     {

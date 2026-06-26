@@ -33,7 +33,7 @@ interface Orden {
   cliente_telefono?: string; direccion?: string; ciudad?: string; region?: string
   courier?: string; total: number; subtotal?: number; descuento?: number
   costo_despacho?: number; cupon_codigo?: string; estado: string
-  es_regalo?: boolean; mensaje_regalo?: string; created_at: string; items?: OrdenItem[]
+  es_regalo?: boolean; mensaje_regalo?: string; regalo_de?: string; regalo_para?: string; created_at: string; items?: OrdenItem[]
 }
 
 interface Cupon {
@@ -640,7 +640,10 @@ function SeccionCupones({ onSetAction, onAbrirPanel, showToast, showConfirm }: {
                 <td style={{ ...S.td, fontSize:'10px', letterSpacing:'0.1em', textTransform:'uppercase', color:'#3a6b52' }}>{c.tipo.replace('_', ' ')}</td>
                 <td style={S.td}><span style={{ fontFamily:'var(--ff-serif)', fontSize:'16px', color:'var(--dorado)' }}>{desc}</span></td>
                 <td style={{ ...S.td, fontSize:'10px', color:'#3a6b52' }}>{c.minimo_compra > 0 ? fmt(c.minimo_compra) : 'Sin mínimo'}</td>
-                <td style={S.td}><span style={{ fontFamily:'var(--ff-serif)', fontSize:'16px' }}>{c.usos_actuales}</span></td>
+                <td style={S.td}>
+                  <span style={{ fontFamily:'var(--ff-serif)', fontSize:'16px' }}>{c.usos_actuales}</span>
+                  <span style={{ fontSize:'10px', color:'#3a6b52', marginLeft:'3px' }}>/ {c.usos_maximos != null ? c.usos_maximos : '∞'}</span>
+                </td>
                 <td style={S.td}>
                   <button onClick={() => toggleActivo(c)} style={{ display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'10px', letterSpacing:'0.09em', padding:'4px 10px', cursor:'pointer', border:'none', fontFamily:'var(--ff-sans)', background: c.activo ? 'rgba(28,61,46,.1)' : 'rgba(28,61,46,.06)', color: c.activo ? 'var(--verde)' : '#3a6b52' }}>
                     <span style={{ width:'5px', height:'5px', borderRadius:'50%', background: c.activo ? '#2e5c45' : '#ccc' }} />
@@ -1281,9 +1284,25 @@ function PanelBody({
 
         {orden.es_regalo && (
           <div style={{ background:'rgba(160,120,48,.1)', border:'0.5px solid rgba(160,120,48,.35)', padding:'22px 24px', marginBottom:'16px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--dorado)', marginBottom: orden.mensaje_regalo ? '12px' : '0' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--dorado)', marginBottom:'12px' }}>
               <span>🎁</span> Kit regalo
             </div>
+            {(orden.regalo_de || orden.regalo_para) && (
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom: orden.mensaje_regalo ? '14px' : '0' }}>
+                {orden.regalo_de && (
+                  <div>
+                    <div style={{ fontSize:'9px', letterSpacing:'0.16em', textTransform:'uppercase', color:'#3a6b52', marginBottom:'3px' }}>De</div>
+                    <div style={{ fontSize:'13px', color:'var(--verde)' }}>{orden.regalo_de}</div>
+                  </div>
+                )}
+                {orden.regalo_para && (
+                  <div>
+                    <div style={{ fontSize:'9px', letterSpacing:'0.16em', textTransform:'uppercase', color:'#3a6b52', marginBottom:'3px' }}>Para</div>
+                    <div style={{ fontSize:'13px', color:'var(--verde)' }}>{orden.regalo_para}</div>
+                  </div>
+                )}
+              </div>
+            )}
             {orden.mensaje_regalo && (
               <>
                 <div style={{ fontSize:'9px', letterSpacing:'0.16em', textTransform:'uppercase', color:'#3a6b52', marginBottom:'6px' }}>Mensaje de la tarjeta</div>

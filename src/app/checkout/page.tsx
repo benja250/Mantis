@@ -25,17 +25,19 @@ const DESPACHO_RM = { courier: 'Paket', costo: 0, label: 'RM — Paket (24–48 
 const DESPACHO_REG = { courier: 'Starken', costo: 3490, label: 'Regiones — Starken (2–8 días hábiles)' }
 const GRATIS_DESDE = 30000
 
+const MAX_MENSAJE = 150
+
 interface Form {
   nombre: string; email: string; telefono: string
   direccion: string; ciudad: string; region: string
   courier: string
-  esRegalo: boolean; mensajeRegalo: string
+  esRegalo: boolean; mensajeRegalo: string; regaloDe: string; regaloPara: string
 }
 
 const FORM_INICIAL: Form = {
   nombre: '', email: '', telefono: '',
   direccion: '', ciudad: '', region: '',
-  courier: '', esRegalo: false, mensajeRegalo: '',
+  courier: '', esRegalo: false, mensajeRegalo: '', regaloDe: '', regaloPara: '',
 }
 
 function SectionTitle({ n, title }: { n: number; title: string }) {
@@ -167,6 +169,8 @@ export default function CheckoutPage() {
           total,
           es_regalo: form.esRegalo,
           mensaje_regalo: form.mensajeRegalo,
+          regalo_de: form.regaloDe,
+          regalo_para: form.regaloPara,
           items: items.map(i => ({
             product: { id: i.product.id, nombre: i.product.nombre, precio: i.product.precio },
             variante: i.variante,
@@ -318,16 +322,46 @@ export default function CheckoutPage() {
                   </div>
                 </label>
                 {form.esRegalo && (
-                  <div>
-                    <Label error={errors.mensajeRegalo}>Mensaje para la tarjeta</Label>
-                    <textarea
-                      className={`checkout-input${errors.mensajeRegalo ? ' error' : ''}`}
-                      value={form.mensajeRegalo}
-                      onChange={set('mensajeRegalo')}
-                      placeholder="Con cariño para ti..."
-                      rows={3}
-                      style={{ resize: 'vertical' }}
-                    />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '13px' }}>
+                      <div>
+                        <Label>De</Label>
+                        <input
+                          className="checkout-input"
+                          value={form.regaloDe}
+                          onChange={set('regaloDe')}
+                          placeholder="Tu nombre"
+                        />
+                      </div>
+                      <div>
+                        <Label>Para</Label>
+                        <input
+                          className="checkout-input"
+                          value={form.regaloPara}
+                          onChange={set('regaloPara')}
+                          placeholder="Nombre de quien recibe"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                        <Label error={errors.mensajeRegalo}>Mensaje para la tarjeta</Label>
+                        <span style={{ fontSize: '10px', color: form.mensajeRegalo.length >= MAX_MENSAJE ? '#C0392B' : '#3a6b52', letterSpacing: '0.06em' }}>
+                          {form.mensajeRegalo.length}/{MAX_MENSAJE}
+                        </span>
+                      </div>
+                      <textarea
+                        className={`checkout-input${errors.mensajeRegalo ? ' error' : ''}`}
+                        value={form.mensajeRegalo}
+                        onChange={e => {
+                          if (e.target.value.length <= MAX_MENSAJE) set('mensajeRegalo')(e)
+                        }}
+                        placeholder="Con cariño para ti..."
+                        rows={3}
+                        style={{ resize: 'vertical' }}
+                        maxLength={MAX_MENSAJE}
+                      />
+                    </div>
                   </div>
                 )}
               </section>
@@ -529,7 +563,7 @@ export default function CheckoutPage() {
 
           <p style={{ fontSize: '10px', color: '#3a6b52', textAlign: 'center', letterSpacing: '0.06em', lineHeight: 1.6, marginTop: 'auto' }}>
             Pago por transferencia bancaria<br />
-            30 días de garantía por defectos de fabricación
+            48h desde la recepción para reportar defectos de fabricación
           </p>
         </div>
       </div>

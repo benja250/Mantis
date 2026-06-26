@@ -7,7 +7,7 @@ const STATS = [
   { num: '18k',  label: 'Baño de oro' },
   { num: '+80',  label: 'Modelos' },
   { num: '+200', label: 'Joyas vendidas' },
-  { num: '30',   label: 'Días de garantía', clickable: true },
+  { num: '48h',  label: 'Para reportar defectos', clickable: true },
 ]
 
 export default function Stats() {

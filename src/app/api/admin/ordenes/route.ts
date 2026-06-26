@@ -6,7 +6,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('ordenes')
-      .select('id, numero, cliente_nombre, cliente_email, cliente_telefono, direccion, ciudad, region, courier, total, subtotal, descuento, costo_despacho, cupon_codigo, es_regalo, mensaje_regalo, estado, created_at, orden_items(nombre, variante, precio, cantidad, subtotal)')
+      .select('id, numero, cliente_nombre, cliente_email, cliente_telefono, direccion, ciudad, region, courier, total, subtotal, descuento, costo_despacho, cupon_codigo, es_regalo, mensaje_regalo, regalo_de, regalo_para, estado, created_at, orden_items(nombre, variante, precio, cantidad, subtotal)')
       .order('created_at', { ascending: false })
 
     if (error) {

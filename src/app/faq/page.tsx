@@ -13,11 +13,11 @@ const PREGUNTAS = [
   },
   {
     q: '¿Puedo cambiar mi pedido?',
-    a: 'Puedes solicitar cambios escribiéndonos por WhatsApp o email antes de que el pedido sea despachado. Una vez despachado, si quieres retractarte de la compra tienes 10 días desde que recibes el producto según la Ley del Consumidor (art. 3 bis Ley 19.496). El producto debe estar sin uso y en su empaque original. Escríbenos y lo coordinamos.',
+    a: 'Puedes solicitar cambios escribiéndonos por WhatsApp o email antes de que el pedido sea despachado. Para productos del catálogo, tienes 10 días corridos desde la recepción para ejercer tu derecho a retracto según la Ley 19.496. Las pulseras personalizadas están exentas del derecho a retracto por ser fabricadas a pedido (art. 3 bis letra b). El producto debe estar sin uso y en su empaque original. Escríbenos y lo coordinamos.',
   },
   {
     q: '¿Qué pasa si llega con defecto?',
-    a: 'Si tu joya presenta un defecto de fabricación dentro de los primeros 30 días, la reponemos sin costo. Solo escríbenos con foto del problema y número de orden.',
+    a: 'Tienes 48 horas desde que recibes tu pedido para reportar defectos de fabricación visibles. Escríbenos por WhatsApp o email con foto del problema y tu número de orden, y nos hacemos cargo sin costo.',
   },
   {
     q: '¿Las joyas son aptas para piel sensible?',
@@ -34,10 +34,6 @@ const PREGUNTAS = [
   {
     q: '¿Tienen tienda física?',
     a: 'Por ahora solo vendemos online. Seguimos creciendo — si quieres saber las novedades, suscríbete a nuestro newsletter o síguenos en Instagram.',
-  },
-  {
-    q: '¿Puedo arrepentirme de mi compra?',
-    a: 'Sí. Según la Ley del Consumidor (Ley N° 19.496, art. 3 bis), tienes derecho a retractarte de cualquier compra online dentro de los 10 días hábiles desde que recibiste el producto, sin dar explicaciones. Solo escríbenos a hola@mantisjoyas.cl con tu número de orden y coordinamos la devolución. El producto debe estar sin uso y en su empaque original.',
   },
   {
     q: '¿Cómo las contacto?',

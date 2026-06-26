@@ -37,15 +37,15 @@ export default function GarantiaModal({ onClose }: { onClose: () => void }) {
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
             <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '56px', fontWeight: 300, color: '#C8A96E', lineHeight: 1 }}>
-              30
+              48
             </span>
             <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '22px', fontWeight: 300, color: '#C8A96E', opacity: 0.8 }}>
-              días
+              horas
             </span>
           </div>
 
           <div style={{ fontSize: '9px', letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(245,240,232,0.5)' }}>
-            De garantía por fabricación
+            Para reportar defectos desde la recepción
           </div>
         </div>
 
@@ -61,7 +61,7 @@ export default function GarantiaModal({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 1.7, margin: 0, paddingLeft: '15px' }}>
-              Defectos de fabricación visibles desde el primer uso: soldaduras deficientes, cierres que no funcionan, piezas dañadas o incompletas al recibir el pedido.
+              Defectos de fabricación visibles al momento de la recepción: soldaduras deficientes, cierres que no funcionan, piezas dañadas o incompletas. Debes reportarlo dentro de las 48 horas siguientes a recibir tu pedido.
             </p>
           </div>
 
@@ -87,8 +87,7 @@ export default function GarantiaModal({ onClose }: { onClose: () => void }) {
             background: 'rgba(160,120,48,0.05)',
           }}>
             <p style={{ fontSize: '12px', color: '#3a6b52', lineHeight: 1.7, margin: 0 }}>
-              Para hacer válida la garantía escríbenos por WhatsApp o email con foto del defecto
-              y tu número de orden. Evaluamos cada caso personalmente.
+              Para hacer válida la garantía escríbenos por WhatsApp o email <strong>dentro de las 48 horas de recibido el pedido</strong>, con foto del defecto y tu número de orden. Evaluamos cada caso personalmente.
             </p>
           </div>
 

@@ -224,7 +224,7 @@ export default function CuidadosPage() {
             Respaldamos cada <em style={{ color: 'var(--dorado-pale)', fontStyle: 'italic' }}>pieza</em>
           </div>
           <p style={{ fontSize: '12px', color: 'rgba(245,240,232,0.38)', lineHeight: 1.8, maxWidth: '360px' }}>
-            Garantía por defectos de fabricación. Si tu joya presenta algún problema desde el primer uso, nos hacemos cargo.
+            Tienes 48 horas desde la recepción de tu pedido para reportar defectos de fabricación visibles. Escríbenos con foto y número de orden.
           </p>
         </div>
         <button
@@ -240,10 +240,10 @@ export default function CuidadosPage() {
             fontFamily: 'var(--ff-serif)', fontSize: '48px',
             color: 'var(--dorado-pale)', lineHeight: 1, marginBottom: '3px',
           }}>
-            30
+            48h
           </div>
           <div style={{ fontSize: '10px', letterSpacing: '0.22em', color: 'rgba(245,240,232,0.28)', textTransform: 'uppercase' }}>
-            Días de garantía
+            Para reportar defectos
           </div>
           <div style={{ fontSize: '9px', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--dorado-pale)', marginTop: '8px', opacity: 0.7 }}>
             Ver política →

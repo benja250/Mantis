@@ -6,6 +6,7 @@ import { useWishlist } from '@/hooks/useWishlist'
 import { formatPrice } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import type { Product, ProductDetail, Variante } from '@/types'
+import GuiaTallasModal from '@/components/GuiaTallasModal'
 
 interface Props {
   product: Product | null
@@ -37,6 +38,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
   const [notifySent, setNotifySent] = useState(false)
   const [added, setAdded] = useState(false)
   const [stockMsg, setStockMsg] = useState(false)
+  const [showGuiaTallas, setShowGuiaTallas] = useState(false)
 
   // Construir ProductDetail cada vez que cambia el producto
   useEffect(() => {
@@ -294,6 +296,17 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
                   Últimas {stockActual} unidades
                 </p>
               )}
+              <button
+                onClick={() => setShowGuiaTallas(true)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  marginTop: '10px', fontSize: '10px', letterSpacing: '0.08em',
+                  color: '#3a6b52', textDecoration: 'underline', textUnderlineOffset: '3px',
+                  fontFamily: 'var(--ff-sans)',
+                }}
+              >
+                ¿Cuánto mide mi muñeca?
+              </button>
             </div>
           )}
 
@@ -377,6 +390,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
 
         </div>
       </div>
+      {showGuiaTallas && <GuiaTallasModal onClose={() => setShowGuiaTallas(false)} />}
     </>
   )
 }

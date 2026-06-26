@@ -46,11 +46,11 @@ export default function PrivacidadPage() {
           },
           {
             title: '6. Términos de compra',
-            body: `Al realizar una compra aceptas que: (a) los precios están en pesos chilenos (CLP), (b) el despacho se coordina según la información proporcionada, (c) la garantía de 30 días aplica solo a defectos de fabricación y no a desgaste por uso.`,
+            body: `Al realizar una compra aceptas que: (a) los precios están en pesos chilenos (CLP), (b) el despacho se coordina según la información proporcionada, (c) tienes 48 horas desde la recepción del pedido para reportar defectos de fabricación visibles; esta garantía no cubre desgaste por uso normal.`,
           },
           {
             title: '7. Derecho a retracto',
-            body: `De acuerdo con la Ley N° 19.496 sobre Protección de los Derechos de los Consumidores (art. 3 bis), tienes derecho a retractarte de tu compra dentro de los 10 días hábiles siguientes a la recepción del producto, sin necesidad de expresar causa. Para ejercer este derecho escríbenos a hola@mantisjoyas.cl con tu número de orden. El producto debe ser devuelto en las mismas condiciones en que fue recibido. Los gastos de devolución corren por tu cuenta salvo que el motivo sea un defecto de fabricación o un error nuestro.`,
+            body: `De acuerdo con la Ley N° 19.496 (art. 3 bis), los productos del catálogo tienen un plazo de 10 días corridos desde la recepción para ejercer el derecho a retracto, sin necesidad de expresar causa. Las pulseras personalizadas (fabricadas a pedido) están exentas de este derecho conforme al art. 3 bis letra b de la misma ley. Para ejercer el retracto en productos del catálogo, escríbenos a hola@mantisjoyas.cl con tu número de orden. El producto debe ser devuelto sin uso y en su empaque original. Los gastos de devolución corren por tu cuenta salvo que el motivo sea un defecto de fabricación o un error nuestro.`,
           },
           {
             title: '8. Cambios y devoluciones',

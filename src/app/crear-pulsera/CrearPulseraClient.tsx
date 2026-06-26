@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useCartStore } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/format'
 import type { Product } from '@/types'
+import GuiaTallasModal from '@/components/GuiaTallasModal'
 
 const PULSERAS_BASE = [
   { id: 'base', label: 'Pulsera base', desc: 'Baño oro 18k' },
@@ -93,6 +94,8 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   const [dijeModal, setDijeModal] = useState<Product | null>(null)
   const [added, setAdded] = useState(false)
   const [generandoImagen, setGenerandoImagen] = useState(false)
+  const [showGuiaTallas, setShowGuiaTallas] = useState(false)
+  const [showDijeInfo, setShowDijeInfo] = useState(false)
 
   const precioTotal = PRECIO_BASE + dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
   const preciosDijes = dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
@@ -268,6 +271,50 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   </div>
                 ))}
               </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '40px' }}>
+                <button
+                  onClick={() => setStep(2)}
+                  style={{ background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '12px 32px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+                >
+                  Siguiente →
+                </button>
+              </div>
+
+              {/* Preview de dijes disponibles */}
+              {dijes.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '12px' }}>
+                    Dijes disponibles
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                    {dijes.map(d => (
+                      <button
+                        key={d.id}
+                        onClick={() => setShowDijeInfo(true)}
+                        style={{ padding: 0, border: '0.5px solid rgba(28,61,46,0.12)', background: 'var(--crema-dark)', cursor: 'pointer', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+                      >
+                        <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden' }}>
+                          {d.imagen_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={d.imagen_url} alt={d.imagen_alt ?? d.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="10" r="7" stroke="#A07830" strokeWidth="1" />
+                                <circle cx="10" cy="10" r="2.5" fill="#A07830" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ padding: '4px 6px 6px', fontSize: '9px', letterSpacing: '0.04em', color: '#3a6b52', textAlign: 'center', lineHeight: 1.3 }}>
+                          {d.nombre}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -277,7 +324,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               <h2 style={{ fontFamily: 'var(--ff-serif)', fontSize: '30px', fontWeight: 300, color: 'var(--verde)', marginBottom: '28px' }}>
                 Elige el largo
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '40px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '12px' }}>
                 {LARGOS.map(l => (
                   <button
                     key={l.id}
@@ -299,6 +346,17 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => setShowGuiaTallas(true)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  marginBottom: '40px', fontSize: '10px', letterSpacing: '0.08em',
+                  color: '#3a6b52', textDecoration: 'underline', textUnderlineOffset: '3px',
+                  fontFamily: 'var(--ff-sans)',
+                }}
+              >
+                ¿Cuánto mide mi muñeca?
+              </button>
             </div>
           )}
 
@@ -319,7 +377,11 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   {dijes.map(d => {
                     const count = dijesSeleccionados.filter(s => s.id === d.id).length
                     return (
-                      <div key={d.id} style={{ background: '#faf9f6', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
+                      <div
+                        key={d.id}
+                        onClick={() => setDijeModal(d)}
+                        style={{ background: '#faf9f6', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 16px rgba(0,0,0,0.08)', cursor: 'pointer' }}
+                      >
                         {/* Imagen cuadrada */}
                         <div style={{ width: '100%', aspectRatio: '1', background: 'var(--crema-dark)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {d.imagen_url ? (
@@ -335,15 +397,9 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                         {/* Info */}
                         <div style={{ padding: '12px 14px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', textAlign: 'center' }}>
                           <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '16px', color: 'var(--dorado)' }}>{d.nombre}</div>
-                          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '14px', color: 'var(--dorado)', opacity: 0.8 }}>{formatPrice(d.precio)}</div>
-                          <button
-                            onClick={() => setDijeModal(d)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '8px', padding: 0 }}
-                          >
-                            Ver detalle
-                          </button>
+                          <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '14px', color: 'var(--dorado)', opacity: 0.8, marginBottom: '8px' }}>{formatPrice(d.precio)}</div>
                           {/* Contador */}
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center' }}>
                             <button
                               onClick={() => removeDijeById(d.id)}
                               disabled={count === 0}
@@ -405,7 +461,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                 ← Atrás
               </button>
             )}
-            {step < 4 && (
+            {step > 1 && step < 4 && (
               <button
                 onClick={() => canContinue && setStep(s => s + 1)}
                 disabled={!canContinue}
@@ -481,46 +537,83 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
         </div>
       </div>
 
+      {/* Modal info dijes (paso 1) */}
+      {showDijeInfo && (
+        <>
+          <div onClick={() => setShowDijeInfo(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,40,30,0.55)', backdropFilter: 'blur(4px)', zIndex: 200 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--crema)', zIndex: 201, width: 'min(400px, calc(100vw - 32px))', padding: '40px 36px', textAlign: 'center', boxShadow: '0 24px 80px rgba(28,61,46,0.2)' }}>
+            <div style={{ fontSize: '32px', marginBottom: '16px' }}>🌿</div>
+            <h3 style={{ fontFamily: 'var(--ff-serif)', fontSize: '24px', fontWeight: 300, color: 'var(--verde)', marginBottom: '14px', lineHeight: 1.2 }}>
+              Los dijes van con tu pulsera
+            </h3>
+            <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 1.8, marginBottom: '28px' }}>
+              Los dijes solo se venden junto con la pulsera personalizada. Sigue los pasos para armar la tuya.
+            </p>
+            <button
+              onClick={() => setShowDijeInfo(false)}
+              style={{ background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '13px 36px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+            >
+              Continuar →
+            </button>
+          </div>
+        </>
+      )}
+
       {/* Modal de dije */}
       {dijeModal && (
         <>
-          <div onClick={() => setDijeModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(28,61,46,0.3)', zIndex: 200 }} />
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--crema)', padding: '40px', zIndex: 201, width: '320px', boxShadow: '0 20px 60px rgba(28,61,46,0.15)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div
+            onClick={() => setDijeModal(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(20,40,30,0.55)', backdropFilter: 'blur(4px)', zIndex: 200 }}
+          />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--crema)', zIndex: 201, width: 'min(720px, calc(100vw - 32px))', maxHeight: 'calc(100vh - 48px)', overflow: 'hidden auto', boxShadow: '0 24px 80px rgba(28,61,46,0.2)' }}>
+            {/* Imagen grande */}
+            <div style={{ width: '100%', aspectRatio: '4/3', background: 'var(--crema-dark)', position: 'relative', overflow: 'hidden' }}>
               {dijeModal.imagen_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={dijeModal.imagen_url} alt={dijeModal.imagen_alt ?? dijeModal.nombre} style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '12px' }} />
+                <img src={dijeModal.imagen_url} alt={dijeModal.imagen_alt ?? dijeModal.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '80px', height: '80px', margin: '0 auto 12px', background: 'var(--crema-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="10" stroke="#A07830" strokeWidth="1.5" />
-                    <circle cx="16" cy="16" r="4" fill="#A07830" />
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                    <circle cx="24" cy="24" r="14" stroke="#A07830" strokeWidth="1.5" />
+                    <circle cx="24" cy="24" r="5" fill="#A07830" />
                   </svg>
                 </div>
               )}
-              <h3 style={{ fontFamily: 'var(--ff-serif)', fontSize: '26px', fontWeight: 300, color: 'var(--verde)', marginBottom: '6px' }}>{dijeModal.nombre}</h3>
-              {dijeModal.descripcion_corta && (
-                <p style={{ fontSize: '12px', color: '#3a6b52', marginBottom: '8px' }}>{dijeModal.descripcion_corta}</p>
-              )}
-              <p style={{ fontFamily: 'var(--ff-serif)', fontSize: '18px', color: 'var(--dorado)' }}>{formatPrice(dijeModal.precio)}</p>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => { addDije(dijeModal); setDijeModal(null) }}
-                style={{ flex: 1, background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '12px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
-              >
-                + Agregar
-              </button>
               <button
                 onClick={() => setDijeModal(null)}
-                style={{ background: 'none', border: '0.5px solid rgba(28,61,46,0.2)', color: 'var(--verde)', padding: '12px 20px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+                style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(245,240,232,0.9)', border: 'none', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '13px', color: 'var(--verde)' }}
+                aria-label="Cerrar"
               >
-                Cerrar
+                ✕
               </button>
+            </div>
+            {/* Info + acciones */}
+            <div style={{ padding: '24px 28px 28px' }}>
+              <h3 style={{ fontFamily: 'var(--ff-serif)', fontSize: '26px', fontWeight: 300, color: 'var(--verde)', marginBottom: '4px' }}>{dijeModal.nombre}</h3>
+              {dijeModal.descripcion_corta && (
+                <p style={{ fontSize: '12px', color: '#3a6b52', lineHeight: 1.7, marginBottom: '10px' }}>{dijeModal.descripcion_corta}</p>
+              )}
+              <p style={{ fontFamily: 'var(--ff-serif)', fontSize: '20px', color: 'var(--dorado)', marginBottom: '20px' }}>{formatPrice(dijeModal.precio)}</p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => { addDije(dijeModal); setDijeModal(null) }}
+                  style={{ flex: 1, background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '13px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+                >
+                  + Agregar
+                </button>
+                <button
+                  onClick={() => setDijeModal(null)}
+                  style={{ background: 'none', border: '0.5px solid rgba(28,61,46,0.2)', color: 'var(--verde)', padding: '13px 20px', cursor: 'pointer', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)' }}
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </>
       )}
+      {showGuiaTallas && <GuiaTallasModal onClose={() => setShowGuiaTallas(false)} />}
     </main>
   )
 }

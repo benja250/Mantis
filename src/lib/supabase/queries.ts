@@ -150,6 +150,8 @@ export interface DatosOrden {
   cupon_codigo?: string
   es_regalo?: boolean
   mensaje_regalo?: string
+  regalo_de?: string
+  regalo_para?: string
   items: ItemCarrito[]
 }
 
@@ -175,6 +177,8 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
       cupon_codigo: datos.cupon_codigo ?? null,
       es_regalo: datos.es_regalo ?? false,
       mensaje_regalo: datos.mensaje_regalo ?? null,
+      regalo_de: datos.regalo_de ?? null,
+      regalo_para: datos.regalo_para ?? null,
     })
     .select('id, numero')
     .single()

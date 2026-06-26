@@ -2,7 +2,7 @@ const ITEMS = [
   'Bañadas en oro 18k',
   'Pulseras · Collares',
   'Envío a todo Chile',
-  '30 días de garantía',
+  'Garantía por defectos de fabricación',
   'Pequeños detalles, grandes momentos',
 ]
 

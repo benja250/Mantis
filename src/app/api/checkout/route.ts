@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     nombre, email, telefono,
     direccion, ciudad, region, courier,
     items, subtotal, descuento, costo_despacho, total,
-    cupon, es_regalo, mensaje_regalo,
+    cupon, es_regalo, mensaje_regalo, regalo_de, regalo_para,
   } = body
 
   // ── 2. Validar campos ─────────────────────────────────────────────────────
@@ -85,6 +85,8 @@ export async function POST(request: Request) {
         cupon_codigo: (cupon as string) || undefined,
         es_regalo: (es_regalo as boolean) ?? false,
         mensaje_regalo: (mensaje_regalo as string) || undefined,
+        regalo_de: (regalo_de as string) || undefined,
+        regalo_para: (regalo_para as string) || undefined,
         items: items as Array<{ product: { id: string; nombre: string; precio: number }; variante?: string; cantidad: number }>,
       })
       ordenId = orden.id

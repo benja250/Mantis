@@ -9,7 +9,7 @@ import type { ProductDetail } from '@/types'
 const TRUST = [
   { label: 'Baño oro 18k' },
   { label: 'Envío a todo Chile' },
-  { label: '6 meses de garantía' },
+  { label: '48h para reportar defectos' },
 ]
 
 function ImagenProducto({ badge, badge_variant }: { badge?: string; badge_variant?: 'default' | 'outline' }) {
