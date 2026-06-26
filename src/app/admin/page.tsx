@@ -14,11 +14,12 @@ type PanelMode =
   | { type: 'ver-orden'; orden: Orden }
   | { type: 'editar-stock'; variante: Variante }
   | { type: 'nuevo-cupon' }
+  | { type: 'editar-cupon'; cupon: Cupon }
   | null
 
 interface Producto {
   id: string; slug: string; nombre: string; precio: number
-  precio_comparar?: number; badge?: string; activo: boolean
+  precio_comparar?: number; badge?: string; activo: boolean; destacado: boolean
   stock_total: number; categoria: string; categoria_id?: string
   categoria_slug?: string; descripcion_corta?: string; imagen_url?: string
 }
@@ -32,7 +33,7 @@ interface Orden {
   cliente_telefono?: string; direccion?: string; ciudad?: string; region?: string
   courier?: string; total: number; subtotal?: number; descuento?: number
   costo_despacho?: number; cupon_codigo?: string; estado: string
-  es_regalo?: boolean; created_at: string; items?: OrdenItem[]
+  es_regalo?: boolean; mensaje_regalo?: string; created_at: string; items?: OrdenItem[]
 }
 
 interface Cupon {
@@ -201,19 +202,19 @@ function SeccionProductos({
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data } = await sb
-      .from('productos')
-      .select('id, slug, nombre, precio, precio_comparar, badge, activo, descripcion_corta, imagen_url, categorias(id, nombre, slug), variantes(stock, activa)')
-      .order('nombre')
-    setProductos((data ?? []).map((p: any) => ({
+    const res = await globalThis.fetch('/api/admin/productos')
+    const json = await res.json()
+    if (!res.ok) { console.error('[SeccionProductos] error:', json.error); setLoading(false); return }
+    setProductos((json.productos ?? []).map((p: any) => ({
       id: p.id, slug: p.slug, nombre: p.nombre, precio: p.precio,
-      precio_comparar: p.precio_comparar, badge: p.badge, activo: p.activo,
+      precio_comparar: p.precio_comparar, badge: p.badge, activo: p.activo, destacado: p.destacado ?? false,
       descripcion_corta: p.descripcion_corta, imagen_url: p.imagen_url ?? '',
       categoria: p.categorias?.nombre ?? '',
       categoria_id: p.categorias?.id ?? '',
       categoria_slug: p.categorias?.slug ?? '',
+      categoria_orden: p.categorias?.orden ?? 99,
       stock_total: (p.variantes ?? []).filter((v: any) => v.activa).reduce((s: number, v: any) => s + (v.stock || 0), 0),
-    })))
+    })).sort((a: any, b: any) => a.categoria_orden - b.categoria_orden || a.nombre.localeCompare(b.nombre, 'es')))
     setLoading(false)
   }, [])
 
@@ -229,16 +230,38 @@ function SeccionProductos({
     return () => onSetAction(null)
   }, [onSetAction, onAbrirPanel])
 
+  async function patchProducto(id: string, fields: Record<string, unknown>) {
+    console.log('[admin] PATCH producto', id, fields)
+    const res = await globalThis.fetch('/api/admin/productos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...fields }),
+    })
+    const json = await res.json()
+    console.log('[admin] PATCH resultado:', json)
+    if (!res.ok) { showToast(json.error ?? 'Error al actualizar', true); return false }
+    return true
+  }
+
   async function toggleActivo(p: Producto) {
-    const { error } = await sb.from('productos').update({ activo: !p.activo }).eq('id', p.id)
-    if (error) { showToast('Error al actualizar', true); return }
+    if (!await patchProducto(p.id, { activo: !p.activo })) return
     setProductos(prev => prev.map(x => x.id === p.id ? { ...x, activo: !x.activo } : x))
+  }
+
+  async function toggleDestacado(p: Producto) {
+    console.log('[admin] toggleDestacado', p.nombre, '→ destacado:', !p.destacado)
+    if (!await patchProducto(p.id, { destacado: !p.destacado })) return
+    setProductos(prev => prev.map(x => x.id === p.id ? { ...x, destacado: !x.destacado } : x))
   }
 
   function pedirEliminar(p: Producto) {
     showConfirm(`¿Eliminar "${p.nombre}"? Esta acción no se puede deshacer.`, async () => {
-      const { error } = await sb.from('productos').delete().eq('id', p.id)
-      if (error) { showToast('Error al eliminar', true); return }
+      const res = await globalThis.fetch('/api/admin/productos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: p.id }),
+      })
+      if (!res.ok) { showToast('Error al eliminar', true); return }
       showToast('Producto eliminado', true)
       fetch()
     })
@@ -262,7 +285,7 @@ function SeccionProductos({
         <table style={{ width:'100%', borderCollapse:'collapse', background:'var(--crema)' }}>
           <thead>
             <tr>
-              {['Producto','Categoría','Precio','Stock','Badge','Estado',''].map(h => (
+              {['Producto','Categoría','Precio','Stock','Badge','Destacado','Estado',''].map(h => (
                 <th key={h} style={S.th}>{h}</th>
               ))}
             </tr>
@@ -288,6 +311,15 @@ function SeccionProductos({
                       ? <span style={{ fontSize:'8px', letterSpacing:'0.15em', textTransform:'uppercase', padding:'3px 7px', background: p.badge === 'Nuevo' ? 'var(--dorado)' : 'var(--verde)', color:'var(--crema)' }}>{p.badge}</span>
                       : <span style={{ color:'rgba(28,61,46,.3)', fontSize:'10px' }}>—</span>
                     }
+                  </td>
+                  <td style={S.td}>
+                    <button
+                      onClick={() => toggleDestacado(p)}
+                      title={p.destacado ? 'Quitar de destacados' : 'Marcar como destacado'}
+                      style={{ background:'none', border:'none', cursor:'pointer', padding:'4px 6px', fontSize:'16px', lineHeight:1, opacity: p.destacado ? 1 : 0.25, transition:'opacity .15s' }}
+                    >
+                      ⭐
+                    </button>
                   </td>
                   <td style={S.td}>
                     <button
@@ -331,15 +363,23 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data } = await sb
-      .from('ordenes')
-      .select('id, numero, cliente_nombre, cliente_email, cliente_telefono, direccion, ciudad, region, courier, total, subtotal, descuento, costo_despacho, cupon_codigo, estado, created_at, orden_items(nombre, variante, precio, cantidad, subtotal)')
-      .order('created_at', { ascending: false })
-    setOrdenes((data ?? []).map((o: any) => ({
-      ...o,
-      es_regalo: o.es_regalo ?? false,
-      items: o.orden_items ?? [],
-    })))
+    try {
+      const res = await globalThis.fetch('/api/admin/ordenes')
+      const json = await res.json()
+      if (!res.ok) {
+        console.error('[admin] ❌ error cargando órdenes:', json.error)
+        setLoading(false)
+        return
+      }
+      console.log('[admin] órdenes cargadas:', json.ordenes?.length ?? 0)
+      setOrdenes((json.ordenes ?? []).map((o: any) => ({
+        ...o,
+        es_regalo: o.es_regalo ?? false,
+        items: o.orden_items ?? [],
+      })))
+    } catch (err) {
+      console.error('[admin] ❌ excepción cargando órdenes:', err)
+    }
     setLoading(false)
   }, [])
 
@@ -366,14 +406,15 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
 
   const pend = ordenes.filter(o => o.estado === 'pendiente').length
   const desp = ordenes.filter(o => o.estado === 'despachado').length
-  const tot  = ordenes.reduce((s, o) => s + o.total, 0)
+  const activas = ordenes.filter(o => o.estado !== 'cancelado')
+  const tot  = activas.reduce((s, o) => s + o.total, 0)
 
   if (loading) return <div style={{ padding:'40px', color:'#3a6b52', fontSize:'12px' }}>Cargando órdenes…</div>
 
   return (
     <>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1px', background:'rgba(28,61,46,.08)', marginBottom:'22px' }}>
-        <StatCard num={ordenes.length} label="Órdenes totales" />
+        <StatCard num={activas.length} label="Órdenes activas" />
         <StatCard num={pend} label="Esperando transferencia" warn={pend > 0} />
         <StatCard num={fmt(tot)} label="Ingresos totales" />
       </div>
@@ -381,13 +422,13 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
       <div style={{ border:'0.5px solid rgba(28,61,46,.1)', overflowX:'auto' }}>
         <table style={{ width:'100%', borderCollapse:'collapse', background:'var(--crema)' }}>
           <thead>
-            <tr>{['Orden','Cliente','Producto','Total','Estado','Fecha','Tracking',''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
+            <tr>{['Orden','Cliente','Producto','Total','Estado','Fecha','Tracking'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
           </thead>
           <tbody>
             {ordenes.map(o => {
               const est = ESTADO_STYLE[o.estado] ?? { color:'#3a6b52', bg:'rgba(28,61,46,.08)' }
               return (
-                <tr key={o.id}>
+                <tr key={o.id} onClick={() => onAbrirPanel({ type: 'ver-orden', orden: o })} style={{ cursor:'pointer' }}>
                   <td style={S.td}>
                     <div style={{ fontFamily:'var(--ff-serif)', fontSize:'14px' }}>{numOrden(o.numero)}</div>
                     {o.es_regalo && <div style={{ fontSize:'9px', color:'var(--dorado)', letterSpacing:'0.1em' }}>🎁 REGALO</div>}
@@ -400,13 +441,20 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
                     {(o.items ?? []).map(i => i.nombre).join(', ') || '—'}
                   </td>
                   <td style={S.td}><span style={{ fontFamily:'var(--ff-serif)', fontSize:'16px', color:'var(--dorado)' }}>{fmt(o.total)}</span></td>
-                  <td style={S.td}>
+                  <td style={S.td} onClick={e => e.stopPropagation()}>
                     <select
                       value={o.estado}
                       onChange={async e => {
                         const nuevo = e.target.value
-                        const { error } = await sb.from('ordenes').update({ estado: nuevo }).eq('id', o.id)
-                        if (error) { showToast('Error al actualizar', true); return }
+                        console.log('[tabla-ordenes] cambiando estado orden', o.id, '→', nuevo)
+                        const res = await globalThis.fetch('/api/admin/ordenes', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: o.id, estado: nuevo }),
+                        })
+                        const json = await res.json()
+                        console.log('[tabla-ordenes] respuesta:', res.status, json)
+                        if (!res.ok) { showToast(json.error ?? 'Error al actualizar', true); return }
                         setOrdenes(prev => prev.map(x => x.id === o.id ? { ...x, estado: nuevo } : x))
                         showToast('Estado actualizado: ' + nuevo)
                         if (nuevo === 'despachado') {
@@ -431,11 +479,6 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
                   </td>
                   <td style={{ ...S.td, fontSize:'10px', color:'#3a6b52' }}>{fmtDate(o.created_at)}</td>
                   <td style={{ ...S.td, fontSize:'10px', color:'#3a6b52' }}>{o.courier ?? '—'}</td>
-                  <td style={S.td}>
-                    <button onClick={() => onAbrirPanel({ type: 'ver-orden', orden: o })} title="Ver detalle" style={{ background:'none', border:'none', cursor:'pointer', padding:'5px 6px', color:'var(--dorado)' }}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.1"/><circle cx="6" cy="6" r="1.8" fill="currentColor" opacity=".5"/></svg>
-                    </button>
-                  </td>
                 </tr>
               )
             })}
@@ -466,12 +509,17 @@ function SeccionInventario({ onSetAction, onAbrirPanel, showToast }: {
     async function load() {
       const { data } = await sb
         .from('variantes')
-        .select('id, nombre, stock, activa, productos(id, nombre)')
+        .select('id, nombre, stock, activa, productos(id, nombre, categorias(orden))')
         .eq('activa', true)
       setVariantes((data ?? []).map((v: any) => ({
         id: v.id, nombre: v.nombre, stock: v.stock, activa: v.activa,
         producto_id: v.productos?.id ?? '', producto_nombre: v.productos?.nombre ?? '',
-      })))
+        categoria_orden: v.productos?.categorias?.orden ?? 99,
+      })).sort((a: any, b: any) =>
+        a.categoria_orden - b.categoria_orden ||
+        a.producto_nombre.localeCompare(b.producto_nombre, 'es') ||
+        a.nombre.localeCompare(b.nombre, 'es')
+      ))
       setLoading(false)
     }
     load()
@@ -527,16 +575,14 @@ function SeccionCupones({ onSetAction, onAbrirPanel, showToast, showConfirm }: {
   showToast: (msg: string, err?: boolean) => void
   showConfirm: (msg: string, fn: () => void) => void
 }) {
-  const sb = createClient()
   const [cupones, setCupones] = useState<Cupon[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetch = useCallback(async () => {
-    const { data } = await sb
-      .from('cupones')
-      .select('id, codigo, tipo, valor, minimo_compra, usos_actuales, usos_maximos, activo')
-      .order('created_at', { ascending: false })
-    setCupones(data ?? [])
+    const res = await globalThis.fetch('/api/admin/cupones')
+    const json = await res.json()
+    if (!res.ok) { console.error('[SeccionCupones] error al cargar:', json.error); setLoading(false); return }
+    setCupones(json.cupones ?? [])
     setLoading(false)
   }, [])
 
@@ -553,16 +599,26 @@ function SeccionCupones({ onSetAction, onAbrirPanel, showToast, showConfirm }: {
   }, [onSetAction, onAbrirPanel])
 
   async function toggleActivo(c: Cupon) {
-    const { error } = await sb.from('cupones').update({ activo: !c.activo }).eq('id', c.id)
-    if (error) { showToast('Error al actualizar', true); return }
+    const res = await globalThis.fetch('/api/admin/cupones', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: c.id, activo: !c.activo }),
+    })
+    const json = await res.json()
+    if (!res.ok) { showToast(json.error ?? 'Error al actualizar', true); return }
     setCupones(prev => prev.map(x => x.id === c.id ? { ...x, activo: !x.activo } : x))
   }
 
   function pedirEliminar(c: Cupon) {
     showConfirm(`¿Eliminar el cupón "${c.codigo}"?`, async () => {
-      const { error } = await sb.from('cupones').delete().eq('id', c.id)
-      if (error) { showToast('Error al eliminar', true); return }
-      showToast('Cupón eliminado', true)
+      const res = await globalThis.fetch('/api/admin/cupones', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: c.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) { showToast(json.error ?? 'Error al eliminar', true); return }
+      showToast('Cupón eliminado')
       fetch()
     })
   }
@@ -591,8 +647,11 @@ function SeccionCupones({ onSetAction, onAbrirPanel, showToast, showConfirm }: {
                     {c.activo ? 'Activo' : 'Inactivo'}
                   </button>
                 </td>
-                <td style={S.td}>
-                  <button onClick={() => pedirEliminar(c)} style={{ background:'none', border:'none', cursor:'pointer', padding:'5px 6px', color:'#c0392b' }}>
+                <td style={{ ...S.td, whiteSpace:'nowrap' }}>
+                  <button onClick={() => onAbrirPanel({ type: 'editar-cupon', cupon: c })} style={{ background:'none', border:'none', cursor:'pointer', padding:'5px 6px', color:'#3a6b52' }} title="Editar">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2L4 10H2V8L8.5 1.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button onClick={() => pedirEliminar(c)} style={{ background:'none', border:'none', cursor:'pointer', padding:'5px 6px', color:'#c0392b' }} title="Eliminar">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 3h9M4 3V2h4v1M4.5 5v4.5M7.5 5v4.5M2 3l.7 7h6.6l.7-7" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                 </td>
@@ -679,6 +738,7 @@ interface ResenaAdmin {
   calificacion: number
   texto: string
   aprobada: boolean
+  destacada: boolean
   fecha: string
 }
 
@@ -686,41 +746,59 @@ function SeccionResenas({ onSetAction, showToast }: {
   onSetAction: (el: React.ReactNode) => void
   showToast: (msg: string, err?: boolean) => void
 }) {
-  const sb = createClient()
   const [resenas, setResenas] = useState<ResenaAdmin[]>([])
   const [cargando, setCargando] = useState(true)
   const [filtro, setFiltro] = useState<'pendientes' | 'aprobadas' | 'todas'>('pendientes')
 
   const cargar = useCallback(async () => {
     setCargando(true)
-    let q = sb.from('resenas')
-      .select('id, producto_id, nombre_cliente, email, calificacion, texto, aprobada, fecha, productos(nombre)')
-      .order('fecha', { ascending: false })
-    if (filtro === 'pendientes') q = q.eq('aprobada', false) as typeof q
-    else if (filtro === 'aprobadas') q = q.eq('aprobada', true) as typeof q
-    const { data } = await q
-    setResenas((data ?? []).map((r: Record<string, unknown>) => ({
+    const res = await globalThis.fetch(`/api/admin/resenas?filtro=${filtro}`)
+    const json = await res.json()
+    setResenas((json.resenas ?? []).map((r: Record<string, unknown>) => ({
       ...r,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       producto_nombre: (r.productos as any)?.nombre ?? 'Producto desconocido',
     })) as ResenaAdmin[])
     setCargando(false)
-  }, [sb, filtro])
+  }, [filtro])
 
   useEffect(() => { cargar() }, [cargar])
   useEffect(() => { onSetAction(null); return () => onSetAction(null) }, [onSetAction])
 
   async function aprobar(id: string) {
-    await sb.from('resenas').update({ aprobada: true }).eq('id', id)
+    await globalThis.fetch('/api/admin/resenas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, aprobada: true }),
+    })
     showToast('Reseña aprobada')
     cargar()
   }
 
+  async function toggleDestacada(r: ResenaAdmin) {
+    const nuevo = !r.destacada
+    const res = await globalThis.fetch('/api/admin/resenas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: r.id, destacada: nuevo }),
+    })
+    const json = await res.json()
+    if (!res.ok) { showToast(json.error ?? 'Error al actualizar', true); return }
+    showToast(nuevo ? 'Reseña destacada en el inicio' : 'Reseña quitada del inicio')
+    cargar()
+  }
+
   async function eliminar(id: string) {
-    await sb.from('resenas').delete().eq('id', id)
+    await globalThis.fetch('/api/admin/resenas', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
     showToast('Reseña eliminada')
     cargar()
   }
+
+  const totalDestacadas = resenas.filter(r => r.destacada).length
 
   const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n)
 
@@ -770,7 +848,21 @@ function SeccionResenas({ onSetAction, showToast }: {
                     </span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0, alignItems: 'center' }}>
+                  {r.aprobada && (
+                    <button
+                      onClick={() => toggleDestacada(r)}
+                      title={r.destacada ? 'Quitar del inicio' : totalDestacadas >= 3 ? 'Máximo 3 destacadas' : 'Destacar en el inicio'}
+                      style={{
+                        background: 'none', border: 'none', cursor: totalDestacadas >= 3 && !r.destacada ? 'not-allowed' : 'pointer',
+                        fontSize: '18px', lineHeight: 1, padding: '2px 4px',
+                        opacity: r.destacada ? 1 : totalDestacadas >= 3 ? 0.25 : 0.35,
+                        transition: 'opacity .15s',
+                      }}
+                    >
+                      ⭐
+                    </button>
+                  )}
                   {!r.aprobada && (
                     <button
                       onClick={() => aprobar(r.id)}
@@ -867,10 +959,12 @@ function PanelBody({
   const [newStock, setNewStock] = useState(String(var_?.stock ?? ''))
 
   // Cupon form state
-  const [cCodigo, setCCodigo] = useState('')
-  const [cTipo, setCTipo] = useState<'porcentaje' | 'monto_fijo'>('porcentaje')
-  const [cValor, setCValor] = useState('')
-  const [cMinimo, setCMinimo] = useState('')
+  const editingCupon = mode?.type === 'editar-cupon' ? mode.cupon : null
+  const [cCodigo, setCCodigo] = useState(editingCupon?.codigo ?? '')
+  const [cTipo, setCTipo] = useState<'porcentaje' | 'monto_fijo'>(editingCupon?.tipo ?? 'porcentaje')
+  const [cValor, setCValor] = useState(editingCupon ? String(editingCupon.valor) : '')
+  const [cMinimo, setCMinimo] = useState(editingCupon ? String(editingCupon.minimo_compra) : '')
+  const [cUsos, setCUsos] = useState(editingCupon?.usos_maximos != null ? String(editingCupon.usos_maximos) : '')
 
   // Orden detail — estado change
   const orden = mode?.type === 'ver-orden' ? mode.orden : null
@@ -890,15 +984,22 @@ function PanelBody({
     const payload = {
       nombre: pNombre.trim(),
       precio: parseInt(pPrecio) || 0,
-      categoria_id: pCatId || undefined,
+      categoria_id: pCatId || null,
       badge: pBadge || null,
       descripcion_corta: pDesc.trim() || null,
       activo: pActivo,
       ...(pImagenUrl ? { imagen_url: pImagenUrl } : {}),
     }
+    console.log('[admin] guardarProducto payload:', JSON.stringify(payload))
     if (m.type === 'editar-producto') {
-      const { error } = await sb.from('productos').update(payload).eq('id', m.producto.id)
-      if (error) { showToast('Error al guardar', true); setPanelLoading(false); return }
+      const res = await globalThis.fetch('/api/admin/productos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: m.producto.id, ...payload }),
+      })
+      const json = await res.json()
+      console.log('[admin] guardarProducto resultado:', json)
+      if (!res.ok) { showToast(json.error ?? 'Error al guardar', true); setPanelLoading(false); return }
       showToast('Producto actualizado')
     } else {
       const slug = slugify(pNombre)
@@ -924,29 +1025,67 @@ function PanelBody({
 
   async function crearCupon() {
     if (!cCodigo.trim() || !cValor) { showToast('Completa todos los campos', true); return }
-    setPanelLoading(true)
-    const { error } = await sb.from('cupones').insert({
+    const payload: Record<string, unknown> = {
       codigo: cCodigo.toUpperCase().trim(),
       tipo: cTipo,
       valor: parseInt(cValor) || 0,
       minimo_compra: parseInt(cMinimo) || 0,
-      activo: true,
+    }
+    if (cUsos.trim()) payload.usos_maximos = parseInt(cUsos) || null
+    setPanelLoading(true)
+    const res = await globalThis.fetch('/api/admin/cupones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     })
-    if (error) { showToast('Error al crear', true); setPanelLoading(false); return }
+    const json = await res.json()
+    if (!res.ok) { showToast(json.error ?? 'Error al crear', true); setPanelLoading(false); return }
     showToast('Cupón creado')
     setPanelLoading(false)
     onRefresh()
     onClose()
   }
 
+  async function editarCupon() {
+    if (!editingCupon || !cCodigo.trim() || !cValor) { showToast('Completa todos los campos', true); return }
+    const fields: Record<string, unknown> = {
+      codigo: cCodigo.toUpperCase().trim(),
+      tipo: cTipo,
+      valor: parseInt(cValor) || 0,
+      minimo_compra: parseInt(cMinimo) || 0,
+      usos_maximos: cUsos.trim() ? parseInt(cUsos) || null : null,
+    }
+    setPanelLoading(true)
+    const res = await globalThis.fetch('/api/admin/cupones', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editingCupon.id, ...fields }),
+    })
+    const json = await res.json()
+    if (!res.ok) { showToast(json.error ?? 'Error al guardar', true); setPanelLoading(false); return }
+    showToast('Cupón actualizado')
+    setPanelLoading(false)
+    onRefresh()
+    onClose()
+  }
+
   async function cambiarEstadoOrden(estado: string) {
-    if (!orden) return
-    const { error } = await sb.from('ordenes').update({ estado }).eq('id', orden.id)
-    if (error) { showToast('Error al actualizar', true); return }
+    console.log('[cambiarEstadoOrden] llamado con estado:', estado, '| orden:', orden?.id ?? 'null')
+    if (!orden) { console.warn('[cambiarEstadoOrden] orden es null, abortando'); return }
+    const body = { id: orden.id, estado }
+    console.log('[cambiarEstadoOrden] enviando PATCH a /api/admin/ordenes:', body)
+    const res = await globalThis.fetch('/api/admin/ordenes', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const json = await res.json()
+    console.log('[cambiarEstadoOrden] respuesta:', res.status, json)
+    if (!res.ok) { showToast(json.error ?? 'Error al actualizar', true); return }
     setOEstado(estado)
     showToast('Estado: ' + estado)
     if (estado === 'despachado') {
-      fetch('/api/ordenes/despachar', {
+      globalThis.fetch('/api/ordenes/despachar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orden_id: orden.id }),
@@ -1043,9 +1182,9 @@ function PanelBody({
             <label style={S.lbl}>Badge</label>
             <select style={S.sel} value={pBadge} onChange={e => setPBadge(e.target.value)}>
               <option value="">Sin badge</option>
-              <option>Más vendido</option>
-              <option>Nuevo</option>
-              <option>Oferta</option>
+              <option value="Más vendido">Más vendido</option>
+              <option value="Nuevo">Nuevo</option>
+              <option value="Exclusivo">Exclusivo</option>
             </select>
           </div>
         </div>
@@ -1140,6 +1279,22 @@ function PanelBody({
           </div>
         </div>
 
+        {orden.es_regalo && (
+          <div style={{ background:'rgba(160,120,48,.1)', border:'0.5px solid rgba(160,120,48,.35)', padding:'22px 24px', marginBottom:'16px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--dorado)', marginBottom: orden.mensaje_regalo ? '12px' : '0' }}>
+              <span>🎁</span> Kit regalo
+            </div>
+            {orden.mensaje_regalo && (
+              <>
+                <div style={{ fontSize:'9px', letterSpacing:'0.16em', textTransform:'uppercase', color:'#3a6b52', marginBottom:'6px' }}>Mensaje de la tarjeta</div>
+                <div style={{ fontSize:'13px', color:'var(--verde)', lineHeight:1.75, fontStyle:'italic' }}>
+                  &ldquo;{orden.mensaje_regalo}&rdquo;
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {(orden.items ?? []).length > 0 && (
           <div style={{ background:'#EDE5D4', padding:'22px 24px', marginBottom:'16px' }}>
             <div style={{ fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'#3a6b52', marginBottom:'10px' }}>Productos</div>
@@ -1184,31 +1339,55 @@ function PanelBody({
     )
   }
 
+  const cuponForm = (
+    <div>
+      <label style={S.lbl}>Código del cupón</label>
+      <input style={S.inp} value={cCodigo} onChange={e => setCCodigo(e.target.value.toUpperCase())} placeholder="MANTIS10" />
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'13px' }}>
+        <div>
+          <label style={S.lbl}>Tipo de descuento</label>
+          <select style={S.sel} value={cTipo} onChange={e => setCTipo(e.target.value as typeof cTipo)}>
+            <option value="porcentaje">Porcentaje (%)</option>
+            <option value="monto_fijo">Monto fijo (CLP)</option>
+          </select>
+        </div>
+        <div>
+          <label style={S.lbl}>Valor</label>
+          <input style={S.inp} type="number" value={cValor} onChange={e => setCValor(e.target.value)} placeholder={cTipo === 'porcentaje' ? '10' : '5000'} />
+        </div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'13px' }}>
+        <div>
+          <label style={S.lbl}>Monto mínimo de compra (CLP)</label>
+          <input style={S.inp} type="number" value={cMinimo} onChange={e => setCMinimo(e.target.value)} placeholder="15000" />
+        </div>
+        <div>
+          <label style={S.lbl}>Usos máximos (vacío = ilimitado)</label>
+          <input style={S.inp} type="number" value={cUsos} onChange={e => setCUsos(e.target.value)} placeholder="100" />
+        </div>
+      </div>
+    </div>
+  )
+
   if (mode.type === 'nuevo-cupon') {
     return (
       <div>
-        <label style={S.lbl}>Código del cupón</label>
-        <input style={S.inp} value={cCodigo} onChange={e => setCCodigo(e.target.value.toUpperCase())} placeholder="MANTIS10" />
-
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'13px' }}>
-          <div>
-            <label style={S.lbl}>Tipo de descuento</label>
-            <select style={S.sel} value={cTipo} onChange={e => setCTipo(e.target.value as typeof cTipo)}>
-              <option value="porcentaje">Porcentaje (%)</option>
-              <option value="monto_fijo">Monto fijo (CLP)</option>
-            </select>
-          </div>
-          <div>
-            <label style={S.lbl}>Valor</label>
-            <input style={S.inp} type="number" value={cValor} onChange={e => setCValor(e.target.value)} placeholder={cTipo === 'porcentaje' ? '10' : '5000'} />
-          </div>
-        </div>
-
-        <label style={S.lbl}>Monto mínimo de compra (CLP)</label>
-        <input style={S.inp} type="number" value={cMinimo} onChange={e => setCMinimo(e.target.value)} placeholder="15000" />
-
+        {cuponForm}
         <button onClick={crearCupon} disabled={loading} style={{ ...S.btnPrim, width:'100%', justifyContent:'center', padding:'12px', marginTop:'4px' }}>
           {loading ? 'Creando…' : 'Crear cupón'}
+        </button>
+      </div>
+    )
+  }
+
+  if (mode.type === 'editar-cupon') {
+    return (
+      <div>
+        {cuponForm}
+        <button onClick={editarCupon} disabled={loading} style={{ ...S.btnPrim, width:'100%', justifyContent:'center', padding:'12px', marginTop:'4px' }}>
+          {loading ? 'Guardando…' : 'Guardar cambios'}
         </button>
       </div>
     )
@@ -1243,7 +1422,7 @@ function AdminShell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [confirm, setConfirm] = useState<{ msg: string; onOk: () => void } | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  function abrirPanel(mode: PanelMode) { setPanelMode(mode); setPanelOpen(true) }
+  const abrirPanel = useCallback((mode: PanelMode) => { setPanelMode(mode); setPanelOpen(true) }, [])
   function cerrarPanel() { setPanelOpen(false); setTimeout(() => setPanelMode(null), 300) }
 
   function showToast(msg: string, err = false) {
@@ -1266,6 +1445,7 @@ function AdminShell({ user, onLogout }: { user: User; onLogout: () => void }) {
     'ver-orden': 'Detalle de orden',
     'editar-stock': 'Actualizar stock',
     'nuevo-cupon': 'Nuevo cupón',
+    'editar-cupon': 'Editar cupón',
   }
 
   const sectionProps = { onSetAction: setTopbarAction, onAbrirPanel: abrirPanel, showToast, showConfirm }

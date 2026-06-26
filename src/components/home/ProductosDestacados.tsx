@@ -4,14 +4,14 @@ import { useState } from 'react'
 import Link from 'next/link'
 import ProductCard from '@/components/productos/ProductCard'
 import ProductModal from '@/components/productos/ProductModal'
-import { PRODUCTOS_MOCK } from '@/lib/productos-mock'
 import type { Product } from '@/types'
 
-const DESTACADOS = ['pulsera-charm-dorada', 'pulsera-snake-fina', 'pulsera-eslabones']
+interface Props {
+  products: Product[]
+}
 
-export default function ProductosDestacados() {
+export default function ProductosDestacados({ products }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const products = DESTACADOS.map(slug => PRODUCTOS_MOCK[slug]).filter(Boolean)
 
   return (
     <section>
@@ -36,17 +36,13 @@ export default function ProductosDestacados() {
 
       {/* Grid */}
       <div className="products-grid products-featured-wrap">
-        {products.map(p => {
-          const minStock = Math.min(...p.variantes.map(v => v.stock))
-          return (
-            <ProductCard
-              key={p.id}
-              product={p}
-              stock={minStock}
-              onOpenModal={(p) => setSelectedProduct(p)}
-            />
-          )
-        })}
+        {products.map(p => (
+          <ProductCard
+            key={p.id}
+            product={p}
+            onOpenModal={(p) => setSelectedProduct(p)}
+          />
+        ))}
       </div>
 
       <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />

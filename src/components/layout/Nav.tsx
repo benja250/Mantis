@@ -62,7 +62,7 @@ export default function Nav() {
             <div className="font-serif text-[26px] font-semibold text-verde tracking-[0.14em] leading-none">
               MANTIS
             </div>
-            <span className="text-[9px] font-light block tracking-[0.32em] text-dorado mt-px uppercase">
+            <span className="nav-logo-subtitle text-[9px] font-light block tracking-[0.32em] text-dorado mt-px uppercase">
               Joyas bañadas en oro
             </span>
           </div>
@@ -82,7 +82,7 @@ export default function Nav() {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {/* Búsqueda */}
           <button
             onClick={() => setSearchOpen(true)}
@@ -129,7 +129,7 @@ export default function Nav() {
               transition: 'opacity 0.2s',
             }}
           >
-            Carrito{' '}
+            <span className="nav-carrito-label">Carrito</span>
             <span style={{ color: '#C8A96E', marginLeft: '4px' }}>({totalItems})</span>
           </button>
         </div>

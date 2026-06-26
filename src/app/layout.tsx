@@ -40,6 +40,11 @@ export const metadata: Metadata = {
     description: "Pulseras, collares y dijes bañados en oro 18k.",
     images: [OG_IMAGE],
   },
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID

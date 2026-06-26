@@ -3,6 +3,9 @@ import { createClient, createServiceClient } from './server'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const isValidUUID = (id: string) => UUID_RE.test(id)
+
 type ImagenRow = { url: string; alt: string | null; es_principal: boolean }
 
 function imagenPrincipal(imagenes: ImagenRow[]): { imagen_url?: string; imagen_alt?: string } {
@@ -152,6 +155,8 @@ export interface DatosOrden {
 
 export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numero: number }> {
   const supabase = createServiceClient()
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  console.log('[crearOrden] service key presente:', !!serviceKey, '| items recibidos:', datos.items.length)
 
   const { data: orden, error: ordenError } = await supabase
     .from('ordenes')
@@ -180,7 +185,7 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
     .from('orden_items')
     .insert(datos.items.map(item => ({
       orden_id: orden.id,
-      producto_id: item.product.id.startsWith('custom-') ? null : item.product.id,
+      producto_id: isValidUUID(item.product.id) ? item.product.id : null,
       nombre: item.product.nombre,
       variante: item.variante ?? null,
       precio: item.product.precio,
@@ -188,12 +193,21 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
       subtotal: item.product.precio * item.cantidad,
     })))
 
-  if (itemsError) throw itemsError
+  if (itemsError) {
+    console.error('[crearOrden] ❌ error insertando orden_items:', itemsError)
+    throw itemsError
+  }
+  console.log('[crearOrden] ✅ orden_items insertados OK')
 
   // ── Decrementar stock de variantes ──────────────────────────────────────────
+  const todosItems = datos.items.map(i => ({ id: i.product.id, nombre: i.product.nombre, variante: i.variante, esUUID: isValidUUID(i.product.id) }))
+  console.log('[crearOrden] items totales:', JSON.stringify(todosItems))
+
   const itemsConStock = datos.items.filter(
-    item => !item.product.id.startsWith('custom-') && item.variante
+    item => isValidUUID(item.product.id) && item.variante
   )
+  console.log('[crearOrden] items para descuento stock:', itemsConStock.length, itemsConStock.map(i => ({ id: i.product.id, variante: i.variante })))
+
   if (itemsConStock.length > 0) {
     const variantesActuales = await Promise.all(
       itemsConStock.map(item =>
@@ -205,13 +219,24 @@ export async function crearOrden(datos: DatosOrden): Promise<{ id: string; numer
           .single()
       )
     )
-    await Promise.all(
+    console.log('[crearOrden] variantes encontradas:', variantesActuales.map(({ data: v, error: e }) => ({ stock: v?.stock, id: v?.id, error: e?.message })))
+
+    const updateResults = await Promise.all(
       variantesActuales.map(({ data: v }, i) => {
-        if (!v) return Promise.resolve()
+        if (!v) {
+          console.warn('[crearOrden] variante no encontrada para item:', itemsConStock[i])
+          return Promise.resolve({ error: null })
+        }
         const nuevoStock = Math.max(0, v.stock - itemsConStock[i].cantidad)
+        console.log('[crearOrden] actualizando stock variante', v.id, ':', v.stock, '→', nuevoStock)
         return supabase.from('variantes').update({ stock: nuevoStock }).eq('id', v.id)
       })
     )
+    updateResults.forEach(({ error }, i) => {
+      if (error) console.error('[crearOrden] ❌ error actualizando stock:', itemsConStock[i]?.product?.nombre, error)
+    })
+  } else {
+    console.log('[crearOrden] sin items con UUID+variante válidos — stock no se descuenta')
   }
 
   // ── Incrementar usos del cupón ───────────────────────────────────────────────

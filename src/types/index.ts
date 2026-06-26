@@ -20,6 +20,7 @@ export interface CartItem {
   product: Product
   variante?: string
   cantidad: number
+  maxStock?: number
 }
 
 export interface Variante {

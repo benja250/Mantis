@@ -1,34 +1,13 @@
-interface Resena {
-  nombre: string
-  texto: string
-  estrellas: number
-  producto: string
-  fecha: string
-}
+export const revalidate = 0
 
-const RESENAS: Resena[] = [
-  {
-    nombre: 'Valentina R.',
-    texto: 'La pulsera llegó en una caja preciosa, perfecta para regalo. El baño dorado es increíble, se ve mucho más cara de lo que es. ¡La recomendé a todas mis amigas!',
-    estrellas: 5,
-    producto: 'Pulsera Charm Dorada',
-    fecha: 'Mayo 2026',
-  },
-  {
-    nombre: 'Camila F.',
-    texto: 'El collar medallón es exactamente lo que buscaba. Buen peso, no se enreda y el baño dorado sigue igual después de un mes de uso diario.',
-    estrellas: 5,
-    producto: 'Collar Medallón San Benito',
-    fecha: 'Abril 2026',
-  },
-  {
-    nombre: 'Isidora M.',
-    texto: 'Pedí la pulsera personalizada con 3 dijes y quedó increíble. El proceso fue súper fácil y llegó en 2 días. Me la roban en el trabajo todos los días.',
-    estrellas: 5,
-    producto: 'Pulsera Personalizada',
-    fecha: 'Abril 2026',
-  },
-]
+import { createClient } from '@/lib/supabase/server'
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+function fmtFecha(iso: string) {
+  const d = new Date(iso)
+  return `${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`
+}
 
 function Estrellas({ n }: { n: number }) {
   return (
@@ -45,7 +24,30 @@ function Estrellas({ n }: { n: number }) {
   )
 }
 
-export default function Resenas() {
+export default async function Resenas() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('resenas')
+    .select('id, nombre_cliente, texto, calificacion, fecha, productos(nombre)')
+    .eq('destacada', true)
+    .eq('aprobada', true)
+    .order('fecha', { ascending: false })
+    .limit(3)
+
+  console.log('[Resenas] query result — count:', data?.length ?? 0, '| error:', error?.message ?? null)
+
+  const resenas = (data ?? []).map(r => ({
+    id: r.id,
+    nombre: r.nombre_cliente,
+    texto: r.texto,
+    estrellas: r.calificacion,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    producto: (r.productos as any)?.nombre ?? '',
+    fecha: fmtFecha(r.fecha),
+  }))
+
+  if (resenas.length === 0) return null
+
   return (
     <section className="resenas-section" style={{
       background: '#EDE5D4',
@@ -77,8 +79,8 @@ export default function Resenas() {
 
       {/* Grid reseñas */}
       <div className="resenas-grid">
-        {RESENAS.map((r) => (
-          <div key={r.nombre} style={{
+        {resenas.map(r => (
+          <div key={r.id} style={{
             background: '#EDE5D4', padding: '32px 28px',
             display: 'flex', flexDirection: 'column', gap: '16px',
           }}>
@@ -94,7 +96,7 @@ export default function Resenas() {
             <div style={{ borderTop: '0.5px solid rgba(28,61,46,0.08)', paddingTop: '16px' }}>
               <p style={{ fontSize: '12px', color: 'var(--verde)', marginBottom: '3px' }}>{r.nombre}</p>
               <p style={{ fontSize: '10px', color: 'var(--dorado)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                {r.fecha} · {r.producto}
+                {r.fecha}{r.producto ? ` · ${r.producto}` : ''}
               </p>
             </div>
           </div>

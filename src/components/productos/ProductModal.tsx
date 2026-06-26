@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { useCartStore } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import { formatPrice } from '@/lib/format'
-import { PRODUCTOS_MOCK } from '@/lib/productos-mock'
 import { createClient } from '@/lib/supabase/client'
 import type { Product, ProductDetail, Variante } from '@/types'
 
@@ -14,11 +13,6 @@ interface Props {
 }
 
 const STOCK_BAJO = 8
-
-const SUGERENCIAS: Record<string, string[]> = {
-  pulseras: ['pulsera-snake-fina', 'pulsera-charm-dorada'],
-  collares: ['pulsera-charm-dorada', 'pulsera-luna-stars'],
-}
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -42,6 +36,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
   const [notifyEmail, setNotifyEmail] = useState('')
   const [notifySent, setNotifySent] = useState(false)
   const [added, setAdded] = useState(false)
+  const [stockMsg, setStockMsg] = useState(false)
 
   // Construir ProductDetail cada vez que cambia el producto
   useEffect(() => {
@@ -52,11 +47,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
     setNotifySent(false)
     setAdded(false)
 
-    // Si está en el mock, usarlo directamente (tiene descripción larga)
-    const mock = PRODUCTOS_MOCK[rawProduct.slug]
-    if (mock) { setDetail(mock); return }
-
-    // Si no está en el mock, construir desde el producto base + fetchear variantes
+    // Construir desde el producto base + fetchear variantes
     async function fetchDetail() {
       const sb = createClient()
       const { data } = await sb
@@ -108,7 +99,13 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
   function handleAdd() {
     if (!detail) return
     if (!variante && detail.variantes.length > 1) return
-    addItem(detail, variante ?? detail.variantes[0]?.nombre)
+    const stock = varianteSeleccionada?.stock ?? detail.variantes[0]?.stock
+    const ok = addItem(detail, variante ?? detail.variantes[0]?.nombre, stock)
+    if (!ok) {
+      setStockMsg(true)
+      setTimeout(() => setStockMsg(false), 2500)
+      return
+    }
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -123,12 +120,6 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
     : ''
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`Mira esta joya: ${detail.nombre} — ${shareUrl}`)}`
   const instagramCaption = encodeURIComponent(`${detail.nombre} — ${detail.descripcion_corta}`)
-
-  const sugeridos = (SUGERENCIAS[detail.categoria_slug] ?? [])
-    .map(s => PRODUCTOS_MOCK[s])
-    .filter(Boolean)
-    .filter(s => s.id !== detail.id)
-    .slice(0, 2)
 
   return (
     <>
@@ -336,20 +327,27 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
               </form>
             )
           ) : (
-            <button
-              onClick={handleAdd}
-              disabled={detail.variantes.length > 1 && !variante}
-              style={{
-                background: added ? 'var(--verde-mid)' : 'var(--verde)',
-                color: 'var(--crema)', border: 'none', padding: '15px',
-                fontFamily: 'var(--ff-sans)', fontSize: '10px', letterSpacing: '0.28em',
-                textTransform: 'uppercase', cursor: 'pointer',
-                opacity: (detail.variantes.length > 1 && !variante) ? 0.5 : 1,
-                transition: 'all 0.2s',
-              }}
-            >
-              {added ? '✓ Agregado al carrito' : '+ Agregar al carrito'}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={handleAdd}
+                disabled={detail.variantes.length > 1 && !variante}
+                style={{
+                  background: added ? 'var(--verde-mid)' : 'var(--verde)',
+                  color: 'var(--crema)', border: 'none', padding: '15px',
+                  fontFamily: 'var(--ff-sans)', fontSize: '10px', letterSpacing: '0.28em',
+                  textTransform: 'uppercase', cursor: 'pointer',
+                  opacity: (detail.variantes.length > 1 && !variante) ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {added ? '✓ Agregado al carrito' : '+ Agregar al carrito'}
+              </button>
+              {stockMsg && (
+                <p style={{ margin: 0, fontSize: '11px', color: '#C0392B', letterSpacing: '0.06em' }}>
+                  Stock máximo alcanzado
+                </p>
+              )}
+            </div>
           )}
 
           {/* Compartir */}
@@ -377,42 +375,6 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
             </a>
           </div>
 
-          {/* Completa el look */}
-          {sugeridos.length > 0 && (
-            <div style={{ borderTop: '0.5px solid rgba(28,61,46,0.08)', paddingTop: '14px' }}>
-              <div style={{
-                fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase',
-                color: 'var(--dorado)', marginBottom: '12px',
-              }}>
-                Completa el look
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {sugeridos.map(s => (
-                  <div key={s.id} style={{
-                    display: 'flex', gap: '14px', alignItems: 'center',
-                    padding: '12px', background: 'var(--crema-dark)',
-                  }}>
-                    <div style={{ width: '44px', height: '44px', background: 'var(--crema-mid)', flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '13px', color: 'var(--verde)', marginBottom: '2px' }}>{s.nombre}</p>
-                      <p style={{ fontSize: '11px', color: 'var(--dorado)' }}>{formatPrice(s.precio)}</p>
-                    </div>
-                    <button
-                      onClick={() => addItem(s, s.variantes[0]?.nombre)}
-                      style={{
-                        background: 'none', border: '0.5px solid rgba(28,61,46,0.2)',
-                        color: 'var(--verde)', padding: '6px 12px', cursor: 'pointer',
-                        fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase',
-                        fontFamily: 'var(--ff-sans)',
-                      }}
-                    >
-                      + Agregar
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

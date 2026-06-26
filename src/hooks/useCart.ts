@@ -8,7 +8,7 @@ interface CartStore {
   isOpen: boolean
   totalItems: number
   totalPrice: number
-  addItem: (product: Product, variante?: string) => void
+  addItem: (product: Product, variante?: string, maxStock?: number) => boolean
   removeItem: (productId: string, variante?: string) => void
   updateQuantity: (productId: string, variante: string | undefined, cantidad: number) => void
   clearCart: () => void
@@ -40,15 +40,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mantis-cart', JSON.stringify(items))
   }, [items])
 
-  function addItem(product: Product, variante?: string) {
+  function addItem(product: Product, variante?: string, maxStock?: number): boolean {
+    const k = itemKey(product.id, variante)
+    let blocked = false
     setItems(prev => {
-      const k = itemKey(product.id, variante)
       const exists = prev.find(i => itemKey(i.product.id, i.variante) === k)
+      if (exists && maxStock != null && exists.cantidad >= maxStock) {
+        blocked = true
+        return prev
+      }
       return exists
-        ? prev.map(i => itemKey(i.product.id, i.variante) === k ? { ...i, cantidad: i.cantidad + 1 } : i)
-        : [...prev, { product, variante, cantidad: 1 }]
+        ? prev.map(i => itemKey(i.product.id, i.variante) === k
+            ? { ...i, cantidad: i.cantidad + 1, maxStock: maxStock ?? i.maxStock }
+            : i)
+        : [...prev, { product, variante, cantidad: 1, maxStock }]
     })
-    setIsOpen(true) // abre el drawer al agregar
+    if (!blocked) setIsOpen(true)
+    return !blocked
   }
 
   function removeItem(productId: string, variante?: string) {
@@ -57,9 +65,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function updateQuantity(productId: string, variante: string | undefined, cantidad: number) {
     if (cantidad <= 0) return removeItem(productId, variante)
-    setItems(prev => prev.map(i =>
-      itemKey(i.product.id, i.variante) === itemKey(productId, variante) ? { ...i, cantidad } : i
-    ))
+    setItems(prev => prev.map(i => {
+      if (itemKey(i.product.id, i.variante) !== itemKey(productId, variante)) return i
+      const max = i.maxStock
+      return { ...i, cantidad: max != null ? Math.min(cantidad, max) : cantidad }
+    }))
   }
 
   function clearCart() {
@@ -72,7 +82,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return createElement(CartContext.Provider, {
     value: {
       items, isOpen, totalItems, totalPrice,
-      addItem, removeItem, updateQuantity, clearCart,
+      addItem: addItem as CartStore['addItem'],
+      removeItem, updateQuantity, clearCart,
       openCart: () => setIsOpen(true),
       closeCart: () => setIsOpen(false),
     },

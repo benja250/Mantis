@@ -1,14 +1,56 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useWishlist } from '@/hooks/useWishlist'
-import { PRODUCTOS_MOCK } from '@/lib/productos-mock'
+import { createClient } from '@/lib/supabase/client'
 import { formatPrice } from '@/lib/format'
+import type { Product } from '@/types'
 
 export default function WishlistPage() {
   const { ids, toggle } = useWishlist()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const products = Object.values(PRODUCTOS_MOCK).filter(p => ids.includes(p.id))
+  useEffect(() => {
+    if (ids.length === 0) {
+      setProducts([])
+      setLoading(false)
+      return
+    }
+
+    async function fetchWishlist() {
+      setLoading(true)
+      const sb = createClient()
+      const { data } = await sb
+        .from('productos')
+        .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagenes_producto(url, alt, es_principal)')
+        .in('id', ids)
+        .eq('activo', true)
+
+      type ImagenRow = { url: string; alt: string | null; es_principal: boolean }
+      const mapped: Product[] = (data ?? []).map(p => {
+        const imgs = (p.imagenes_producto ?? []) as ImagenRow[]
+        const img = imgs.find(i => i.es_principal) ?? imgs[0]
+        return {
+          id: p.id,
+          slug: p.slug,
+          nombre: p.nombre,
+          descripcion_corta: p.descripcion_corta,
+          precio: p.precio,
+          precio_comparar: p.precio_comparar ?? undefined,
+          badge: p.badge ?? undefined,
+          material: p.material ?? undefined,
+          imagen_url: img?.url,
+          imagen_alt: img?.alt ?? undefined,
+        }
+      })
+      setProducts(mapped)
+      setLoading(false)
+    }
+
+    fetchWishlist()
+  }, [ids.join(',')])
 
   return (
     <main>
@@ -32,7 +74,11 @@ export default function WishlistPage() {
       </div>
 
       <div style={{ padding: '56px 48px' }}>
-        {products.length === 0 ? (
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 0', fontSize: '13px', color: '#3a6b52' }}>
+            Cargando...
+          </div>
+        ) : products.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <p style={{
               fontFamily: 'var(--ff-serif)', fontSize: '22px', color: 'var(--verde)', marginBottom: '20px',
@@ -53,20 +99,27 @@ export default function WishlistPage() {
           }}>
             {products.map(p => (
               <div key={p.id} style={{ background: 'var(--crema)', position: 'relative' }}>
-                {/* Imagen placeholder */}
                 <div style={{
                   aspectRatio: '1', background: 'var(--crema-dark)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'relative', overflow: 'hidden',
                 }}>
-                  <svg width="48" height="48" viewBox="0 0 80 80" style={{ opacity: 0.15 }}>
-                    <ellipse cx="40" cy="40" rx="6" ry="8" fill="none" stroke="#A07830" strokeWidth="1.5" />
-                    <path d="M37 33 Q28 22 18 14" fill="none" stroke="#A07830" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M43 33 Q52 22 62 14" fill="none" stroke="#A07830" strokeWidth="1.5" strokeLinecap="round" />
-                    <polygon points="40,26 35,33 45,33" fill="none" stroke="#A07830" strokeWidth="1.5" strokeLinejoin="round" />
-                  </svg>
+                  {p.imagen_url ? (
+                    <img
+                      src={p.imagen_url}
+                      alt={p.imagen_alt ?? p.nombre}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <svg width="48" height="48" viewBox="0 0 80 80" style={{ opacity: 0.15 }}>
+                      <ellipse cx="40" cy="40" rx="6" ry="8" fill="none" stroke="#A07830" strokeWidth="1.5" />
+                      <path d="M37 33 Q28 22 18 14" fill="none" stroke="#A07830" strokeWidth="1.5" strokeLinecap="round" />
+                      <path d="M43 33 Q52 22 62 14" fill="none" stroke="#A07830" strokeWidth="1.5" strokeLinecap="round" />
+                      <polygon points="40,26 35,33 45,33" fill="none" stroke="#A07830" strokeWidth="1.5" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </div>
 
-                {/* Quitar de favoritos */}
                 <button
                   onClick={() => toggle(p.id)}
                   style={{

@@ -223,7 +223,7 @@ export default function BuscadorOverlay({ open, onClose }: Props) {
                 Sugerencias
               </p>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {['Pulsera', 'Collar', 'Dije', 'Oro'].map(s => (
+                {['Pulsera', 'Collar'].map(s => (
                   <button
                     key={s}
                     onClick={() => { setQuery(s); buscar(s) }}

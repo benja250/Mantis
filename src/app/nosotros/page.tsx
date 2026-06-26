@@ -58,7 +58,7 @@ export default function NosotrosPage() {
             width={345}
             height={391}
             quality={100}
-            style={{ objectFit: 'contain', width: '180px', height: 'auto', position: 'relative', zIndex: 1 }}
+            style={{ objectFit: 'contain', width: '200px', height: 'auto', position: 'relative', zIndex: 1, filter: 'brightness(0.62) contrast(1.35) saturate(1.2)' }}
           />
         </div>
         <div style={{
@@ -95,7 +95,7 @@ export default function NosotrosPage() {
           fontFamily: 'var(--ff-serif)', fontSize: '26px', fontStyle: 'italic', fontWeight: 300,
           lineHeight: 1.4, maxWidth: '540px', margin: '0 auto 12px',
         }}>
-          &ldquo;Porque creemos que no necesitas una ocasión <em style={{ color: 'var(--dorado)' }}>especial</em> para brillar.&rdquo;
+          &ldquo;Porque creemos que no necesitas una ocasión <em style={{ color: 'var(--dorado)' }}>especial</em>{' '}para brillar.&rdquo;
         </p>
         <div style={{ fontSize: '10px', letterSpacing: '0.26em', textTransform: 'uppercase', color: '#3a6b52' }}>
           — Mantis, joyas bañadas en oro

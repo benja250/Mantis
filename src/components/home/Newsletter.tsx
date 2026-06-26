@@ -7,8 +7,15 @@ export default function Newsletter() {
   const [estado, setEstado] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [msg, setMsg] = useState('')
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!EMAIL_RE.test(email.trim())) {
+      setEstado('error')
+      setMsg('Ingresa un email válido')
+      return
+    }
     setEstado('loading')
     try {
       const res = await fetch('/api/newsletter', {

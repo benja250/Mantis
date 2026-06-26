@@ -190,7 +190,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   return (
     <main>
       {/* Hero */}
-      <div style={{ padding: '60px 48px 40px', background: 'var(--verde)', borderBottom: '0.5px solid rgba(245,240,232,0.08)' }}>
+      <div className="crear-pulsera-hero" style={{ padding: '60px 48px 40px', background: 'var(--verde)', borderBottom: '0.5px solid rgba(245,240,232,0.08)' }}>
         <div style={{ fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase', color: 'var(--dorado-pale)', marginBottom: '16px' }}>
           Personaliza
         </div>
@@ -199,10 +199,10 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
         </h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px' }}>
+      <div className="crear-pulsera-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 400px' }}>
 
         {/* ── Pasos ── */}
-        <div style={{ padding: '48px', borderRight: '0.5px solid rgba(28,61,46,0.08)' }}>
+        <div className="crear-pulsera-steps" style={{ padding: '48px', borderRight: '0.5px solid rgba(28,61,46,0.08)' }}>
 
           {/* Indicador */}
           <div style={{ display: 'flex', marginBottom: '48px' }}>
@@ -230,7 +230,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   }}>
                     {done ? '✓' : n}
                   </span>
-                  <span style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: active ? 'var(--dorado)' : done ? 'var(--verde)' : '#3a6b52' }}>
+                  <span className="crear-paso-label" style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: active ? 'var(--dorado)' : done ? 'var(--verde)' : '#3a6b52' }}>
                     {label}
                   </span>
                 </button>
@@ -315,7 +315,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               {dijes.length === 0 ? (
                 <p style={{ fontSize: '13px', color: '#3a6b52' }}>No hay dijes disponibles en este momento.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '50px', background: 'var(--crema-dark)', marginBottom: '24px' }}>
+                <div className="crear-pulsera-dijes-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '40px', background: 'var(--crema-dark)', marginBottom: '24px' }}>
                   {dijes.map(d => {
                     const count = dijesSeleccionados.filter(s => s.id === d.id).length
                     return (
@@ -418,7 +418,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
         </div>
 
         {/* ── Preview ── */}
-        <div style={{ padding: '48px 36px', background: 'var(--crema-dark)', display: 'flex', flexDirection: 'column', gap: '32px', position: 'sticky', top: '0', alignSelf: 'start' }}>
+        <div className="crear-pulsera-preview" style={{ padding: '48px 36px', background: 'var(--crema-dark)', display: 'flex', flexDirection: 'column', gap: '32px', position: 'sticky', top: '0', alignSelf: 'start' }}>
           <div>
             <div style={{ fontSize: '9px', letterSpacing: '0.28em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '24px' }}>
               Preview en tiempo real

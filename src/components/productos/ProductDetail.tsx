@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useCartStore } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/format'
-import type { ProductDetail } from '@/lib/productos-mock'
+import type { ProductDetail } from '@/types'
 
 const TRUST = [
   { label: 'Baño oro 18k' },

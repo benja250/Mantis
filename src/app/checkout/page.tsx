@@ -204,7 +204,7 @@ export default function CheckoutPage() {
   return (
     <main>
       {/* Cabecera */}
-      <div style={{
+      <div className="checkout-header" style={{
         padding: '28px 48px', borderBottom: '0.5px solid rgba(28,61,46,0.08)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
@@ -218,10 +218,10 @@ export default function CheckoutPage() {
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', minHeight: 'calc(100vh - 80px)' }}>
+      <div className="checkout-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 420px', minHeight: 'calc(100vh - 80px)' }}>
 
         {/* ── Formulario / Datos banco ── */}
-        <div style={{ padding: '56px 48px', borderRight: '0.5px solid rgba(28,61,46,0.08)' }}>
+        <div className="checkout-form-panel" style={{ padding: '56px 48px', borderRight: '0.5px solid rgba(28,61,46,0.08)' }}>
 
           {step === 'form' ? (
             <form onSubmit={handleContinue} noValidate>
@@ -238,7 +238,7 @@ export default function CheckoutPage() {
                     <input className={`checkout-input${errors.nombre ? ' error' : ''}`}
                       value={form.nombre} onChange={set('nombre')} placeholder="María González" autoComplete="name" />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="checkout-fields-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <Label error={errors.email}>Email</Label>
                       <input className={`checkout-input${errors.email ? ' error' : ''}`}
@@ -262,7 +262,7 @@ export default function CheckoutPage() {
                     <input className={`checkout-input${errors.direccion ? ' error' : ''}`}
                       value={form.direccion} onChange={set('direccion')} placeholder="Av. Providencia 1234, Depto 5" autoComplete="street-address" />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="checkout-fields-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <Label error={errors.ciudad}>Ciudad</Label>
                       <input className={`checkout-input${errors.ciudad ? ' error' : ''}`}
@@ -376,7 +376,7 @@ export default function CheckoutPage() {
                   Nombre: DATOS_BANCO.nombre,
                   'Email comprobante': DATOS_BANCO.email,
                 }).map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <div key={k} className="checkout-banco-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <span style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a6b52' }}>{k}</span>
                     <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '15px', color: 'var(--verde)' }}>{v}</span>
                   </div>
@@ -455,7 +455,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* ── Resumen ── */}
-        <div style={{ padding: '56px 36px', background: 'var(--crema-dark)', display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <div className="checkout-summary" style={{ padding: '56px 36px', background: 'var(--crema-dark)', display: 'flex', flexDirection: 'column', gap: '0' }}>
           <h2 style={{ fontFamily: 'var(--ff-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--verde)', marginBottom: '28px' }}>
             Tu pedido
           </h2>

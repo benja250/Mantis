@@ -140,7 +140,7 @@ export default function CartDrawer() {
         {/* Lista de ítems */}
         {items.length > 0 && (
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            {items.map(({ product, variante, cantidad }) => {
+            {items.map(({ product, variante, cantidad, maxStock }) => {
               const key = product.id + '||' + (variante ?? '')
               return (
                 <div
@@ -225,8 +225,9 @@ export default function CartDrawer() {
                           {cantidad}
                         </span>
                         <button
-                          style={qBtnStyle}
+                          style={{ ...qBtnStyle, opacity: (maxStock != null && cantidad >= maxStock) ? 0.3 : 1 }}
                           onClick={() => updateQuantity(product.id, variante, cantidad + 1)}
+                          disabled={maxStock != null && cantidad >= maxStock}
                           aria-label="Aumentar"
                         >
                           +

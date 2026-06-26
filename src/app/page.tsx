@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Hero from '@/components/home/Hero'
 import Stats from '@/components/home/Stats'
 import ProductosDestacados from '@/components/home/ProductosDestacados'
@@ -6,15 +7,21 @@ import BrandStory from '@/components/home/BrandStory'
 import Empaque from '@/components/home/Empaque'
 import Resenas from '@/components/home/Resenas'
 import Newsletter from '@/components/home/Newsletter'
+import { getProductosDestacados } from '@/lib/supabase/queries'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+export default async function Home() {
+  const products = await getProductosDestacados()
   return (
     <main>
       <Hero />
       <Stats />
-      <ProductosDestacados />
+      <ProductosDestacados products={products} />
       <Empaque />
-      <Resenas />
+      <Suspense fallback={null}>
+        <Resenas />
+      </Suspense>
       <Marquee />
       <BrandStory />
       <Newsletter />
