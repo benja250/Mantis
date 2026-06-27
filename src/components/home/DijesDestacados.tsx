@@ -43,11 +43,23 @@ export default async function DijesDestacados() {
         </Link>
       </div>
 
+      <style>{`
+        .dijes-hero-img {
+          display: block;
+          height: auto;
+          object-fit: contain;
+          margin: 0 auto;
+          width: 100%;
+          max-width: 100%;
+        }
+        @media (min-width: 640px)  { .dijes-hero-img { max-width: 95%; } }
+        @media (min-width: 1024px) { .dijes-hero-img { max-width: 90%; } }
+      `}</style>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/images/dijes-hero.jpeg"
         alt="Dijes Mantis — personaliza tu pulsera"
-        style={{ display: 'block', width: '100%', maxWidth: '1000px', height: 'auto', objectFit: 'contain', margin: '0 auto' }}
+        className="dijes-hero-img"
       />
     </section>
   )
