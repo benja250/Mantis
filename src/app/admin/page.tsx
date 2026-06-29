@@ -910,6 +910,26 @@ function SeccionAcceso({ onSetAction, user }: { onSetAction: (el: React.ReactNod
     return () => onSetAction(null)
   }, [onSetAction])
 
+  const [showForm, setShowForm] = useState(false)
+  const [nueva, setNueva] = useState('')
+  const [confirmar, setConfirmar] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null)
+
+  async function handleCambiar(e: FormEvent) {
+    e.preventDefault()
+    if (nueva !== confirmar) { setMsg({ text: 'Las contraseñas no coinciden.', error: true }); return }
+    if (nueva.length < 6) { setMsg({ text: 'La contraseña debe tener al menos 6 caracteres.', error: true }); return }
+    setLoading(true)
+    const sb = createClient()
+    const { error } = await sb.auth.updateUser({ password: nueva })
+    setLoading(false)
+    if (error) { setMsg({ text: error.message, error: true }); return }
+    setMsg({ text: 'Contraseña actualizada correctamente.', error: false })
+    setNueva(''); setConfirmar(''); setShowForm(false)
+    setTimeout(() => setMsg(null), 4000)
+  }
+
   const infoBox = (lbl: string, val: string, sub: string, verde = false) => (
     <div style={{ background: verde ? 'var(--verde)' : '#EDE5D4', padding:'22px 24px', marginBottom:'16px' }}>
       <div style={{ fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color: verde ? 'rgba(200,169,110,.6)' : '#3a6b52', marginBottom:'10px' }}>{lbl}</div>
@@ -920,10 +940,59 @@ function SeccionAcceso({ onSetAction, user }: { onSetAction: (el: React.ReactNod
 
   return (
     <div style={{ maxWidth:'500px' }}>
-      {infoBox('URL del panel admin', 'mantisjoyas.cl/admin', 'Solo pueden ingresar las cuentas creadas en Supabase.')}
+      {msg && (
+        <div style={{ padding:'12px 16px', marginBottom:'16px', background: msg.error ? 'rgba(192,57,43,0.08)' : 'rgba(28,61,46,0.08)', border: `0.5px solid ${msg.error ? 'rgba(192,57,43,0.3)' : 'rgba(28,61,46,0.2)'}`, fontSize:'12px', color: msg.error ? '#C0392B' : 'var(--verde)' }}>
+          {msg.text}
+        </div>
+      )}
+      {infoBox('URL del panel admin', 'mantisjoyeria.cl/admin', 'Solo pueden ingresar las cuentas creadas en Supabase.')}
       {infoBox('Recuperación de contraseña', '¿Olvidaste tu contraseña?', 'Desde el login haz clic en "¿Olvidaste tu contraseña?", ingresa tu email y recibirás un link seguro. El link expira en 1 hora.')}
       {infoBox('Cuenta activa', user.email ?? '', 'Administrador principal · Acceso completo', true)}
       {infoBox('Notificaciones automáticas', '', 'Al recibir un pedido se envía notificación al email configurado en variables de entorno de Supabase.')}
+
+      {/* Cambiar contraseña */}
+      {!showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          style={{ marginTop:'8px', background:'none', border:'0.5px solid rgba(28,61,46,0.25)', padding:'11px 20px', cursor:'pointer', fontSize:'10px', letterSpacing:'0.18em', textTransform:'uppercase', fontFamily:'var(--ff-sans)', color:'var(--verde)' }}
+        >
+          Cambiar contraseña
+        </button>
+      ) : (
+        <form onSubmit={handleCambiar} style={{ background:'#EDE5D4', padding:'24px', marginTop:'8px', display:'flex', flexDirection:'column', gap:'14px' }}>
+          <div style={{ fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'#3a6b52', marginBottom:'4px' }}>Cambiar contraseña</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+            <label style={{ fontSize:'10px', letterSpacing:'0.12em', color:'#3a6b52' }}>Nueva contraseña</label>
+            <input
+              type="password" value={nueva} onChange={e => setNueva(e.target.value)}
+              required minLength={6}
+              style={{ border:'0.5px solid rgba(28,61,46,0.2)', background:'var(--crema)', padding:'10px 12px', fontSize:'13px', fontFamily:'var(--ff-sans)', outline:'none', color:'var(--verde)' }}
+            />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+            <label style={{ fontSize:'10px', letterSpacing:'0.12em', color:'#3a6b52' }}>Confirmar contraseña</label>
+            <input
+              type="password" value={confirmar} onChange={e => setConfirmar(e.target.value)}
+              required minLength={6}
+              style={{ border:'0.5px solid rgba(28,61,46,0.2)', background:'var(--crema)', padding:'10px 12px', fontSize:'13px', fontFamily:'var(--ff-sans)', outline:'none', color:'var(--verde)' }}
+            />
+          </div>
+          <div style={{ display:'flex', gap:'10px' }}>
+            <button
+              type="submit" disabled={loading}
+              style={{ background:'var(--verde)', color:'var(--crema)', border:'none', padding:'11px 24px', cursor: loading ? 'not-allowed' : 'pointer', fontSize:'10px', letterSpacing:'0.2em', textTransform:'uppercase', fontFamily:'var(--ff-sans)', opacity: loading ? 0.6 : 1 }}
+            >
+              {loading ? 'Guardando…' : 'Guardar'}
+            </button>
+            <button
+              type="button" onClick={() => { setShowForm(false); setNueva(''); setConfirmar(''); setMsg(null) }}
+              style={{ background:'none', border:'0.5px solid rgba(28,61,46,0.2)', padding:'11px 20px', cursor:'pointer', fontSize:'10px', letterSpacing:'0.18em', textTransform:'uppercase', fontFamily:'var(--ff-sans)', color:'var(--verde)' }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }
@@ -957,6 +1026,9 @@ function PanelBody({
   const [uploadingMain, setUploadingMain] = useState(false)
   const [uploadingPreview, setUploadingPreview] = useState(false)
 
+  // Variantes form state (nuevo producto)
+  const [vStocks, setVStocks] = useState<Record<string, string>>({})
+
   // Stock form state
   const var_ = mode?.type === 'editar-stock' ? mode.variante : null
   const [newStock, setNewStock] = useState(String(var_?.stock ?? ''))
@@ -980,6 +1052,13 @@ function PanelBody({
   }, [mode])
 
   if (!mode) return null
+
+  function getVarianteNames(catSlug: string): string[] {
+    if (catSlug === 'pulseras') return ['S', 'M', 'L', 'XL']
+    if (catSlug === 'collares') return ['Largo estándar']
+    if (catSlug === 'dijes') return ['Única']
+    return []
+  }
 
   async function guardarProducto() {
     const m = mode; if (!m) return
@@ -1006,8 +1085,22 @@ function PanelBody({
       showToast('Producto actualizado')
     } else {
       const slug = slugify(pNombre)
-      const { error } = await sb.from('productos').insert({ ...payload, slug })
-      if (error) { showToast('Error al crear', true); setPanelLoading(false); return }
+      const catSlug = cats.find(c => c.id === pCatId)?.slug ?? ''
+      const varianteNames = getVarianteNames(catSlug)
+      const variantes = varianteNames.map(nombre => ({
+        nombre,
+        stock: parseInt(vStocks[nombre] ?? '0') || 0,
+      }))
+      const insertPayload = { ...payload, slug, variantes }
+      console.log('[admin] crear producto payload:', JSON.stringify(insertPayload))
+      const res = await globalThis.fetch('/api/admin/productos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(insertPayload),
+      })
+      const json = await res.json()
+      console.log('[admin] crear producto resultado:', json)
+      if (!res.ok) { showToast(json.error ?? 'Error al crear', true); setPanelLoading(false); return }
       showToast('Producto creado')
     }
     setPanelLoading(false)
@@ -1108,6 +1201,8 @@ function PanelBody({
     const catSlug = cats.find(c => c.id === pCatId)?.slug ?? prod?.categoria_slug ?? ''
     const esDije = catSlug === 'dijes'
     const esPulsera = catSlug === 'pulseras'
+    const varianteNames = getVarianteNames(catSlug)
+    const mostrarStock = mode.type === 'nuevo-producto' && varianteNames.length > 0
 
     async function uploadMain(file: File) {
       if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
@@ -1233,6 +1328,30 @@ function PanelBody({
             />
           )}
         </div>
+
+        {/* ── Variantes / Stock inicial (solo al crear) ── */}
+        {mostrarStock && (
+          <div style={{ borderTop: '0.5px solid rgba(28,61,46,.07)', marginTop: '4px', paddingTop: '14px', marginBottom: '4px' }}>
+            <div style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '10px' }}>
+              Stock inicial
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: esPulsera ? 'repeat(4,1fr)' : '1fr', gap: '10px' }}>
+              {varianteNames.map(nombre => (
+                <div key={nombre}>
+                  <label style={{ ...S.lbl, marginBottom: '5px' }}>{nombre}</label>
+                  <input
+                    style={S.inp}
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={vStocks[nombre] ?? ''}
+                    onChange={e => setVStocks(prev => ({ ...prev, [nombre]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 0', borderTop:'0.5px solid rgba(28,61,46,.07)' }}>
           <span style={{ fontSize:'12px', letterSpacing:'0.07em' }}>Visible en la tienda</span>
