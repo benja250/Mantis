@@ -1272,7 +1272,7 @@ function PanelBody({
       if (error) { showToast('Error al subir: ' + error.message, true); setUploadingExtra(false); return }
       const { data } = sb.storage.from('productos').getPublicUrl(path)
       const url = data.publicUrl
-      if (mode.type === 'editar-producto') {
+      if (mode?.type === 'editar-producto') {
         const orden = extraImgs.length + 1
         const res = await globalThis.fetch('/api/admin/imagenes', {
           method: 'POST',

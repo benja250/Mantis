@@ -74,9 +74,6 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { c
         const dijeTopY = CENTER_Y - renderHalf
         return (
           <g key={`${dije.id}-${i}`}>
-            {/* Línea desde la cadena hasta el tope del dije */}
-            <line x1={x} y1={CHAIN_Y + 3} x2={x} y2={dijeTopY} stroke="#A07830" strokeWidth="1" />
-            <circle cx={x} cy={dijeTopY} r="2.5" fill="#A07830" />
             {previewUrl ? (
               <image href={previewUrl} x={x - renderHalf} y={dijeTopY} width={renderSize} height={renderSize} preserveAspectRatio="xMidYMid meet" />
             ) : (
@@ -184,15 +181,11 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
       const renderSize = isLetra ? MAX_LETRA : dijeSize
       const renderHalf = renderSize / 2
       const dijeTopY = CENTER_Y - renderHalf
-      const anchor = `<line x1="${x}" y1="${CHAIN_Y + 3}" x2="${x}" y2="${dijeTopY}" stroke="#A07830" stroke-width="1"/>` +
-                     `<circle cx="${x}" cy="${dijeTopY}" r="2.5" fill="#A07830"/>`
       if (!b64) {
-        return anchor +
-          `<circle cx="${x}" cy="${CENTER_Y}" r="${renderHalf * 0.8}" fill="none" stroke="#C8A96E" stroke-width="1.2"/>` +
+        return `<circle cx="${x}" cy="${CENTER_Y}" r="${renderHalf * 0.8}" fill="none" stroke="#C8A96E" stroke-width="1.2"/>` +
           `<circle cx="${x}" cy="${CENTER_Y}" r="${renderHalf * 0.22}" fill="#A07830"/>`
       }
-      return anchor +
-        `<image href="${b64}" x="${x - renderHalf}" y="${dijeTopY}" width="${renderSize}" height="${renderSize}" preserveAspectRatio="xMidYMid meet"/>`
+      return `<image href="${b64}" x="${x - renderHalf}" y="${dijeTopY}" width="${renderSize}" height="${renderSize}" preserveAspectRatio="xMidYMid meet"/>`
     }).join('')
 
     const svg =
