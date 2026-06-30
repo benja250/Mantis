@@ -6,7 +6,7 @@ import { useWishlist } from '@/hooks/useWishlist'
 import { formatPrice } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import type { Product, ProductDetail, Variante } from '@/types'
-import GuiaTallasModal from '@/components/GuiaTallasModal'
+import BotonGuiaTallas from '@/components/BotonGuiaTallas'
 
 interface Props {
   product: Product | null
@@ -38,7 +38,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
   const [notifySent, setNotifySent] = useState(false)
   const [added, setAdded] = useState(false)
   const [stockMsg, setStockMsg] = useState(false)
-  const [showGuiaTallas, setShowGuiaTallas] = useState(false)
+  const [imgIdx, setImgIdx] = useState(0)
 
   // Construir ProductDetail cada vez que cambia el producto
   useEffect(() => {
@@ -48,21 +48,26 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
     setNotifyEmail('')
     setNotifySent(false)
     setAdded(false)
+    setImgIdx(0)
 
-    // Construir desde el producto base + fetchear variantes
     async function fetchDetail() {
       const sb = createClient()
-      const { data } = await sb
-        .from('variantes')
-        .select('id, nombre, stock')
-        .eq('producto_id', rawProduct!.id)
-        .eq('activa', true)
-        .order('nombre')
+      const [variantesRes, imagenesRes] = await Promise.all([
+        sb.from('variantes').select('id, nombre, stock').eq('producto_id', rawProduct!.id).eq('activa', true).order('nombre'),
+        sb.from('imagenes_producto').select('id, url, alt, orden').eq('producto_id', rawProduct!.id).order('orden'),
+      ])
 
-      const variantes: Variante[] = (data ?? []).map(v => ({
+      const variantes: Variante[] = ((variantesRes.data ?? []) as { id: string; nombre: string; stock: number }[]).map(v => ({
         id: v.id,
         nombre: v.nombre,
         stock: v.stock,
+      }))
+
+      const imagenes = ((imagenesRes.data ?? []) as { id: string; url: string; alt?: string; orden: number }[]).map(img => ({
+        id: img.id,
+        url: img.url,
+        alt: img.alt ?? undefined,
+        orden: img.orden,
       }))
 
       setDetail({
@@ -72,6 +77,7 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
         categoria: '',
         categoria_slug: '',
         variantes,
+        imagenes,
       })
     }
 
@@ -139,42 +145,108 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
       {/* Lightbox */}
       <div className="modal-container">
 
-        {/* Columna izquierda — imagen */}
-        <div className="modal-image-col" style={{ position: 'relative', background: '#EDE5D4', minHeight: '420px' }}>
-          {detail.imagen_url ? (
-            <img
-              src={detail.imagen_url}
-              alt={detail.imagen_alt ?? detail.nombre}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : null}
+        {/* Columna izquierda — carrusel */}
+        {(() => {
+          // Construir lista de imágenes: primero las de imagenes_producto, si no hay usar imagen_url
+          const imgs: string[] = detail.imagenes && detail.imagenes.length > 0
+            ? detail.imagenes.map(img => img.url)
+            : (detail.imagen_url ? [detail.imagen_url] : [])
+          const total = imgs.length
+          const currentImg = imgs[imgIdx] ?? detail.imagen_url
+          const currentAlt = (detail.imagenes?.[imgIdx]?.alt) ?? detail.imagen_alt ?? detail.nombre
+          return (
+            <div className="modal-image-col" style={{ position: 'relative', background: '#EDE5D4', minHeight: '420px', display: 'flex', flexDirection: 'column' }}>
+              {/* Imagen principal */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                {currentImg && (
+                  <img
+                    src={currentImg}
+                    alt={currentAlt}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )}
 
-          {detail.badge && (
-            <div style={{
-              position: 'absolute', top: '16px', left: '16px',
-              background: detail.badge_variant === 'default' ? 'var(--verde)' : 'transparent',
-              color: detail.badge_variant === 'default' ? 'var(--crema)' : 'var(--verde)',
-              border: detail.badge_variant === 'outline' ? '0.5px solid rgba(28,61,46,0.25)' : 'none',
-              fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase',
-              padding: '5px 12px', fontFamily: 'var(--ff-sans)',
-            }}>
-              {detail.badge}
+                {detail.badge && (
+                  <div style={{
+                    position: 'absolute', top: '16px', left: '16px',
+                    background: detail.badge_variant === 'default' ? 'var(--verde)' : 'transparent',
+                    color: detail.badge_variant === 'default' ? 'var(--crema)' : 'var(--verde)',
+                    border: detail.badge_variant === 'outline' ? '0.5px solid rgba(28,61,46,0.25)' : 'none',
+                    fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase',
+                    padding: '5px 12px', fontFamily: 'var(--ff-sans)',
+                  }}>
+                    {detail.badge}
+                  </div>
+                )}
+
+                {/* Flechas (solo si hay más de 1 imagen) */}
+                {total > 1 && (
+                  <>
+                    <button
+                      onClick={() => setImgIdx(i => (i - 1 + total) % total)}
+                      style={{
+                        position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'rgba(245,240,232,0.85)', border: 'none', cursor: 'pointer',
+                        width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--verde)', fontSize: '18px', lineHeight: 1,
+                      }}
+                      aria-label="Imagen anterior"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() => setImgIdx(i => (i + 1) % total)}
+                      style={{
+                        position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'rgba(245,240,232,0.85)', border: 'none', cursor: 'pointer',
+                        width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--verde)', fontSize: '18px', lineHeight: 1,
+                      }}
+                      aria-label="Imagen siguiente"
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => toggle(detail.id)}
+                  style={{
+                    position: 'absolute', bottom: '16px', right: '16px',
+                    background: 'var(--crema)', border: '0.5px solid rgba(28,61,46,0.15)',
+                    width: '38px', height: '38px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                  title={wishlistOn ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                >
+                  <HeartIcon filled={wishlistOn} />
+                </button>
+              </div>
+
+              {/* Thumbnails (solo si hay más de 1 imagen) */}
+              {total > 1 && (
+                <div style={{ display: 'flex', gap: '6px', padding: '10px', background: '#EDE5D4', justifyContent: 'center', flexShrink: 0 }}>
+                  {imgs.map((url, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setImgIdx(i)}
+                      style={{
+                        width: '52px', height: '52px', padding: 0, border: 'none',
+                        outline: i === imgIdx ? '2px solid var(--verde)' : '1px solid rgba(28,61,46,0.15)',
+                        cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
+                        opacity: i === imgIdx ? 1 : 0.65,
+                        transition: 'opacity 0.15s, outline 0.15s',
+                      }}
+                      aria-label={`Ver imagen ${i + 1}`}
+                    >
+                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-
-          <button
-            onClick={() => toggle(detail.id)}
-            style={{
-              position: 'absolute', bottom: '16px', right: '16px',
-              background: 'var(--crema)', border: '0.5px solid rgba(28,61,46,0.15)',
-              width: '38px', height: '38px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-            title={wishlistOn ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-          >
-            <HeartIcon filled={wishlistOn} />
-          </button>
-        </div>
+          )
+        })()}
 
         {/* Columna derecha — info con scroll */}
         <div className="modal-info-col" style={{
@@ -296,17 +368,9 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
                   Últimas {stockActual} unidades
                 </p>
               )}
-              <button
-                onClick={() => setShowGuiaTallas(true)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                  marginTop: '10px', fontSize: '10px', letterSpacing: '0.08em',
-                  color: '#3a6b52', textDecoration: 'underline', textUnderlineOffset: '3px',
-                  fontFamily: 'var(--ff-sans)',
-                }}
-              >
-                ¿Cuánto mide mi muñeca?
-              </button>
+              <div style={{ marginTop: '10px' }}>
+                <BotonGuiaTallas />
+              </div>
             </div>
           )}
 
@@ -390,7 +454,6 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
 
         </div>
       </div>
-      {showGuiaTallas && <GuiaTallasModal onClose={() => setShowGuiaTallas(false)} />}
     </>
   )
 }

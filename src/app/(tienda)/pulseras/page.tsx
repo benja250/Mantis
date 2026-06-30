@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getProductosByCategoria } from '@/lib/supabase/queries'
 import CatalogoConFiltros from '@/components/productos/CatalogoConFiltros'
+import BotonGuiaTallas from '@/components/BotonGuiaTallas'
 
 export const metadata: Metadata = { title: 'Pulseras — MANTIS' }
 
@@ -13,7 +14,7 @@ export default async function PulserasPage() {
       <div className="catalog-header" style={{
         padding: '60px 48px 36px',
         display: 'flex',
-        alignItems: 'baseline',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
         borderBottom: '0.5px solid rgba(28,61,46,0.08)',
       }}>
@@ -37,13 +38,12 @@ export default async function PulserasPage() {
             Pulseras
           </h1>
         </div>
-        <span style={{
-          fontSize: '11px',
-          letterSpacing: '0.14em',
-          color: '#3a6b52',
-        }}>
-          {productos.length} productos
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <BotonGuiaTallas />
+          <span style={{ fontSize: '11px', letterSpacing: '0.14em', color: '#3a6b52' }}>
+            {productos.length} productos
+          </span>
+        </div>
       </div>
 
       <CatalogoConFiltros products={productos} />

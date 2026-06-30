@@ -1,4 +1,4 @@
-import type { Product, ProductDetail, Variante } from '@/types'
+import type { Product, ProductDetail, ProductImagen, Variante } from '@/types'
 import { createClient, createServiceClient } from './server'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export async function getProductoBySlug(slug: string): Promise<ProductDetail | n
       id, slug, nombre, descripcion_corta, descripcion,
       precio, precio_comparar, badge, material,
       categorias(nombre, slug),
-      imagenes_producto(url, alt, es_principal, orden),
+      imagenes_producto(id, url, alt, es_principal, orden),
       variantes(id, nombre, stock, activa)
     `)
     .eq('slug', slug)
@@ -84,6 +84,16 @@ export async function getProductoBySlug(slug: string): Promise<ProductDetail | n
 
   const cat = data.categorias as unknown as { nombre: string; slug: string } | null
 
+  type ImagenFullRow = ImagenRow & { id?: string; orden?: number }
+  const allImagenes = ((data.imagenes_producto ?? []) as ImagenFullRow[])
+    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
+  const imagenes: ProductImagen[] = allImagenes.map(img => ({
+    id: img.id,
+    url: img.url,
+    alt: img.alt ?? undefined,
+    orden: img.orden ?? 0,
+  }))
+
   return {
     id: data.id,
     slug: data.slug,
@@ -97,7 +107,8 @@ export async function getProductoBySlug(slug: string): Promise<ProductDetail | n
     categoria: cat?.nombre ?? '',
     categoria_slug: cat?.slug ?? '',
     variantes,
-    ...imagenPrincipal((data.imagenes_producto ?? []) as ImagenRow[]),
+    imagenes,
+    ...imagenPrincipal(allImagenes),
   }
 }
 

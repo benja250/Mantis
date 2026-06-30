@@ -1,14 +1,14 @@
 'use client'
 
 import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { CartItem, Product } from '@/types'
+import type { CartItem, CartItemDesglose, Product } from '@/types'
 
 interface CartStore {
   items: CartItem[]
   isOpen: boolean
   totalItems: number
   totalPrice: number
-  addItem: (product: Product, variante?: string, maxStock?: number) => boolean
+  addItem: (product: Product, variante?: string, maxStock?: number, desglose?: CartItemDesglose) => boolean
   removeItem: (productId: string, variante?: string) => void
   updateQuantity: (productId: string, variante: string | undefined, cantidad: number) => void
   clearCart: () => void
@@ -40,7 +40,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mantis-cart', JSON.stringify(items))
   }, [items])
 
-  function addItem(product: Product, variante?: string, maxStock?: number): boolean {
+  function addItem(product: Product, variante?: string, maxStock?: number, desglose?: CartItemDesglose): boolean {
     const k = itemKey(product.id, variante)
     let blocked = false
     setItems(prev => {
@@ -53,7 +53,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ? prev.map(i => itemKey(i.product.id, i.variante) === k
             ? { ...i, cantidad: i.cantidad + 1, maxStock: maxStock ?? i.maxStock }
             : i)
-        : [...prev, { product, variante, cantidad: 1, maxStock }]
+        : [...prev, { product, variante, cantidad: 1, maxStock, desglose }]
     })
     if (!blocked) setIsOpen(true)
     return !blocked

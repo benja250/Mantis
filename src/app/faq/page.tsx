@@ -13,7 +13,7 @@ const PREGUNTAS = [
   },
   {
     q: '¿Puedo cambiar mi pedido?',
-    a: 'Puedes solicitar cambios escribiéndonos por WhatsApp o email antes de que el pedido sea despachado. Para productos del catálogo, tienes 10 días corridos desde la recepción para ejercer tu derecho a retracto según la Ley 19.496. Las pulseras personalizadas están exentas del derecho a retracto por ser fabricadas a pedido (art. 3 bis letra b). El producto debe estar sin uso y en su empaque original. Escríbenos y lo coordinamos.',
+    a: 'Puedes solicitar cambios escribiéndonos por WhatsApp o email antes de que el pedido sea despachado. Una vez entregado, tienes 48 horas para reportar cualquier problema con tu pedido. El producto debe estar sin uso y en su empaque original. Escríbenos y lo coordinamos.',
   },
   {
     q: '¿Qué pasa si llega con defecto?',

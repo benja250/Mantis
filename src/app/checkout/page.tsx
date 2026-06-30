@@ -495,14 +495,27 @@ export default function CheckoutPage() {
           </h2>
 
           <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {items.map(({ product, variante, cantidad }) => (
+            {items.map(({ product, variante, cantidad, desglose }) => (
               <div key={product.id + (variante ?? '')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '12px' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', color: 'var(--verde)', marginBottom: '2px' }}>{product.nombre}</div>
-                  {variante && (
-                    <div style={{ fontSize: '10px', color: '#3a6b52', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{variante}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--verde)', marginBottom: '4px' }}>{product.nombre}</div>
+                  {desglose ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em' }}>
+                        <span>{desglose.cadena.nombre}</span>
+                        <span style={{ fontFamily: 'var(--ff-serif)', color: 'var(--dorado)' }}>{formatPrice(desglose.cadena.precio)}</span>
+                      </div>
+                      {desglose.dijes.map((d, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em' }}>
+                          <span>{d.nombre}</span>
+                          <span style={{ fontFamily: 'var(--ff-serif)', color: 'var(--dorado)' }}>{formatPrice(d.precio)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : variante && (
+                    <div style={{ fontSize: '10px', color: '#3a6b52', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{variante}</div>
                   )}
-                  <div style={{ fontSize: '11px', color: '#3a6b52', marginTop: '2px' }}>× {cantidad}</div>
+                  <div style={{ fontSize: '11px', color: '#3a6b52' }}>× {cantidad}</div>
                 </div>
                 <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '15px', color: 'var(--dorado)', flexShrink: 0 }}>
                   {formatPrice(product.precio * cantidad)}

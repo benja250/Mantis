@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { useCartStore } from '@/hooks/useCart'
 import { formatPrice } from '@/lib/format'
 import type { Product } from '@/types'
-import GuiaTallasModal from '@/components/GuiaTallasModal'
+import BotonGuiaTallas from '@/components/BotonGuiaTallas'
 
 const PULSERAS_BASE = [
-  { id: 'base', label: 'Pulsera base', desc: 'Baño oro 18k' },
-  // Agregar más tipos de pulsera aquí en el futuro
+  { id: 'oval', label: 'Eslabón Ovalado', desc: 'Baño oro 18k · Cadena oval clásica', imagen: '/images/pulsera-oval.png' },
+  { id: 'rect', label: 'Eslabón Rectangular', desc: 'Baño oro 18k · Cadena eslabón ancho', imagen: '/images/pulsera-rect.png' },
 ]
 
 const LARGOS = [
@@ -25,52 +25,71 @@ function getPreviewUrl(imagen_url: string | undefined): string | undefined {
   return imagen_url.replace('/dijes/', '/dijes-preview/')
 }
 
-function PrevisualizacionPulsera({ cadena, dijesSeleccionados }: { cadena: string; dijesSeleccionados: Product[] }) {
+function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { cadena: string; dijesSeleccionados: Product[]; pulseraImg?: string }) {
   const chainStrokeWidth = cadena === 'snake' ? 7 : cadena === 'eslabones' ? 5 : 3
   const chainDash = cadena === 'eslabones' ? '12 6' : 'none'
 
   const n = dijesSeleccionados.length
-  // Tamaño dinámico: grande cuando hay pocos dijes, se achica al agregar más
-  const AVAILABLE = 220   // px de ancho útil sobre la cadena
-  const MAX_SIZE  = 68    // tamaño máximo de cada dije
-  const MIN_SIZE  = 26    // tamaño mínimo antes de que queden ilegibles
-  const RATIO     = 1.15  // factor de espacio entre centros (step = size * ratio)
+  const AVAILABLE = 260
+  const MAX_SIZE  = 95
+  const MIN_SIZE  = 32
+  const RATIO     = 1.15
   const dijeSize = n === 0 ? MAX_SIZE : Math.max(MIN_SIZE, Math.min(MAX_SIZE, AVAILABLE / (RATIO * (n - 1) + 1)))
-  const half = dijeSize / 2
   const step = n <= 1 ? 0 : dijeSize * RATIO
   const startX = 175 - ((n - 1) * step) / 2
 
+  const IMG_H = 110
+  const CHAIN_Y = pulseraImg ? 26 : 80
+  const ATTACH_Y = CHAIN_Y + 8
+  // Centro Y fijo: siempre a MAX_SIZE/2 del punto de enganche, independiente de cuántos dijes haya
+  const MAX_LETRA = Math.min(MAX_SIZE * 1.6, 140)
+  const CENTER_Y = ATTACH_Y + MAX_SIZE / 2
+  const SVG_H = pulseraImg
+    ? (n > 0 ? Math.ceil(CENTER_Y + MAX_LETRA / 2 + 10) : IMG_H + 10)
+    : 200
+
   return (
-    <svg width="340" height="200" viewBox="0 0 340 200">
-      <path d="M30 80 Q170 80 310 80" fill="none" stroke="#A07830" strokeWidth={chainStrokeWidth} strokeLinecap="round" strokeDasharray={chainDash} />
-      {cadena === 'snake' && (
-        <path d="M30 80 Q170 80 310 80" fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 6" />
+    <svg width="100%" viewBox={`0 0 340 ${SVG_H}`} style={{ display: 'block' }}>
+      {pulseraImg ? (
+        <image href={pulseraImg} x="20" y="0" width="300" height={IMG_H} preserveAspectRatio="xMidYMid meet" />
+      ) : (
+        <>
+          <path d="M30 80 Q170 80 310 80" fill="none" stroke="#A07830" strokeWidth={chainStrokeWidth} strokeLinecap="round" strokeDasharray={chainDash} />
+          {cadena === 'snake' && (
+            <path d="M30 80 Q170 80 310 80" fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 6" />
+          )}
+          <rect x="16" y="73" width="16" height="14" rx="4" fill="#A07830" />
+          <circle cx="318" cy="80" r="8" fill="none" stroke="#A07830" strokeWidth="2" />
+          <circle cx="318" cy="80" r="3" fill="#A07830" />
+        </>
       )}
-      <rect x="16" y="73" width="16" height="14" rx="4" fill="#A07830" />
-      <circle cx="318" cy="80" r="8" fill="none" stroke="#A07830" strokeWidth="2" />
-      <circle cx="318" cy="80" r="3" fill="#A07830" />
 
       {dijesSeleccionados.map((dije, i) => {
         const x = startX + i * step
         const previewUrl = getPreviewUrl(dije.imagen_url)
-        const cy = 97 + half  // centro del dije para el fallback
+        const isLetra = dije.nombre.toLowerCase().includes('letra')
+        const renderSize = isLetra ? MAX_LETRA : dijeSize
+        const renderHalf = renderSize / 2
+        // Tope del dije: CENTER_Y - renderHalf (todos centrados a la misma altura)
+        const dijeTopY = CENTER_Y - renderHalf
         return (
           <g key={`${dije.id}-${i}`}>
-            <line x1={x} y1="83" x2={x} y2="97" stroke="#A07830" strokeWidth="1" />
-            <circle cx={x} cy="97" r="2.5" fill="#A07830" />
+            {/* Línea desde la cadena hasta el tope del dije */}
+            <line x1={x} y1={CHAIN_Y + 3} x2={x} y2={dijeTopY} stroke="#A07830" strokeWidth="1" />
+            <circle cx={x} cy={dijeTopY} r="2.5" fill="#A07830" />
             {previewUrl ? (
-              <image href={previewUrl} x={x - half} y={97} width={dijeSize} height={dijeSize} preserveAspectRatio="xMidYMid meet" />
+              <image href={previewUrl} x={x - renderHalf} y={dijeTopY} width={renderSize} height={renderSize} preserveAspectRatio="xMidYMid meet" />
             ) : (
               <>
-                <circle cx={x} cy={cy} r={half * 0.8} fill="none" stroke="#C8A96E" strokeWidth="1.2" />
-                <circle cx={x} cy={cy} r={half * 0.22} fill="#A07830" />
+                <circle cx={x} cy={CENTER_Y} r={renderHalf * 0.8} fill="none" stroke="#C8A96E" strokeWidth="1.2" />
+                <circle cx={x} cy={CENTER_Y} r={renderHalf * 0.22} fill="#A07830" />
               </>
             )}
           </g>
         )
       })}
 
-      {n === 0 && (
+      {n === 0 && !pulseraImg && (
         <g opacity="0.15">
           <line x1="175" y1="84" x2="175" y2="100" stroke="#A07830" strokeWidth="1.5" />
           <circle cx="175" cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
@@ -94,8 +113,8 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   const [dijeModal, setDijeModal] = useState<Product | null>(null)
   const [added, setAdded] = useState(false)
   const [generandoImagen, setGenerandoImagen] = useState(false)
-  const [showGuiaTallas, setShowGuiaTallas] = useState(false)
   const [showDijeInfo, setShowDijeInfo] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const precioTotal = PRECIO_BASE + dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
   const preciosDijes = dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
@@ -114,55 +133,72 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
 
   async function generarImagenPulsera(): Promise<string | undefined> {
     const n = dijesSeleccionados.length
+    const pulseraBase = PULSERAS_BASE.find(p => p.id === cadena)
 
-    // Mismo layout que PrevisualizacionPulsera
-    const AVAILABLE = 220, MAX_SIZE = 68, MIN_SIZE = 26, RATIO = 1.15
+    const AVAILABLE = 260, MAX_SIZE = 95, MIN_SIZE = 32, RATIO = 1.15
     const dijeSize = n === 0 ? MAX_SIZE : Math.max(MIN_SIZE, Math.min(MAX_SIZE, AVAILABLE / (RATIO * (n - 1) + 1)))
     const half = dijeSize / 2
     const step = n <= 1 ? 0 : dijeSize * RATIO
     const startX = 175 - ((n - 1) * step) / 2
 
-    // Fetch y convertir cada imagen a base64 para que el SVG sea autocontenido
-    const bases64 = await Promise.all(
-      dijesSeleccionados.map(async (dije) => {
-        const url = getPreviewUrl(dije.imagen_url)
-        if (!url) return null
-        try {
-          const res = await fetch(url)
-          if (!res.ok) return null
-          const blob = await res.blob()
-          return await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.onerror = reject
-            reader.readAsDataURL(blob)
-          })
-        } catch { return null }
-      })
-    )
+    const IMG_H = 110
+    const CHAIN_Y = 26
+    const ATTACH_Y = CHAIN_Y + 8
+    const MAX_LETRA = Math.min(MAX_SIZE * 1.6, 140)
+    const CENTER_Y = ATTACH_Y + MAX_SIZE / 2
+    const SVG_H = n > 0 ? Math.ceil(CENTER_Y + MAX_LETRA / 2 + 10) : IMG_H + 10
 
-    const dijeEls = dijesSeleccionados.map((_, i) => {
+    async function toBase64(url: string): Promise<string | null> {
+      try {
+        const res = await fetch(url)
+        if (!res.ok) return null
+        const blob = await res.blob()
+        return await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+      } catch { return null }
+    }
+
+    const [pulseraB64, ...dijeBases64] = await Promise.all([
+      pulseraBase?.imagen ? toBase64(pulseraBase.imagen) : Promise.resolve(null),
+      ...dijesSeleccionados.map(dije => {
+        const url = getPreviewUrl(dije.imagen_url)
+        return url ? toBase64(url) : Promise.resolve(null)
+      }),
+    ])
+
+    const pulseraEl = pulseraB64
+      ? `<image href="${pulseraB64}" x="20" y="0" width="300" height="${IMG_H}" preserveAspectRatio="xMidYMid meet"/>`
+      : `<path d="M30 ${CHAIN_Y} Q170 ${CHAIN_Y} 310 ${CHAIN_Y}" fill="none" stroke="#A07830" stroke-width="3" stroke-linecap="round"/>` +
+        `<rect x="16" y="${CHAIN_Y - 7}" width="16" height="14" rx="4" fill="#A07830"/>` +
+        `<circle cx="318" cy="${CHAIN_Y}" r="8" fill="none" stroke="#A07830" stroke-width="2"/>` +
+        `<circle cx="318" cy="${CHAIN_Y}" r="3" fill="#A07830"/>`
+
+    const dijeEls = dijesSeleccionados.map((dije, i) => {
       const x = startX + i * step
-      const b64 = bases64[i]
-      const cy = 97 + half
-      const anchor = `<line x1="${x}" y1="83" x2="${x}" y2="97" stroke="#A07830" stroke-width="1"/><circle cx="${x}" cy="97" r="2.5" fill="#A07830"/>`
+      const b64 = dijeBases64[i]
+      const isLetra = dije.nombre.toLowerCase().includes('letra')
+      const renderSize = isLetra ? MAX_LETRA : dijeSize
+      const renderHalf = renderSize / 2
+      const dijeTopY = CENTER_Y - renderHalf
+      const anchor = `<line x1="${x}" y1="${CHAIN_Y + 3}" x2="${x}" y2="${dijeTopY}" stroke="#A07830" stroke-width="1"/>` +
+                     `<circle cx="${x}" cy="${dijeTopY}" r="2.5" fill="#A07830"/>`
       if (!b64) {
         return anchor +
-          `<circle cx="${x}" cy="${cy}" r="${half * 0.8}" fill="none" stroke="#C8A96E" stroke-width="1.2"/>` +
-          `<circle cx="${x}" cy="${cy}" r="${half * 0.22}" fill="#A07830"/>`
+          `<circle cx="${x}" cy="${CENTER_Y}" r="${renderHalf * 0.8}" fill="none" stroke="#C8A96E" stroke-width="1.2"/>` +
+          `<circle cx="${x}" cy="${CENTER_Y}" r="${renderHalf * 0.22}" fill="#A07830"/>`
       }
       return anchor +
-        `<image href="${b64}" x="${x - half}" y="97" width="${dijeSize}" height="${dijeSize}" preserveAspectRatio="xMidYMid meet"/>`
+        `<image href="${b64}" x="${x - renderHalf}" y="${dijeTopY}" width="${renderSize}" height="${renderSize}" preserveAspectRatio="xMidYMid meet"/>`
     }).join('')
 
     const svg =
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 200">` +
-      `<rect width="340" height="200" fill="#F5F0E8"/>` +
-      `<path d="M30 80 Q170 80 310 80" fill="none" stroke="#A07830" stroke-width="3" stroke-linecap="round"/>` +
-      `<rect x="16" y="73" width="16" height="14" rx="4" fill="#A07830"/>` +
-      `<circle cx="318" cy="80" r="8" fill="none" stroke="#A07830" stroke-width="2"/>` +
-      `<circle cx="318" cy="80" r="3" fill="#A07830"/>` +
-      dijeEls +
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 ${SVG_H}">` +
+      `<rect width="340" height="${SVG_H}" fill="#F5F0E8"/>` +
+      pulseraEl + dijeEls +
       `</svg>`
 
     return 'data:image/svg+xml,' + encodeURIComponent(svg)
@@ -171,11 +207,16 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   async function handleAgregar() {
     if (!largo) return
     setGenerandoImagen(true)
-    const pulsera = PULSERAS_BASE.find(p => p.id === cadena)?.label ?? cadena
+    const pulseraBase = PULSERAS_BASE.find(p => p.id === cadena)
+    const pulsera = pulseraBase?.label ?? cadena
     const nombres = dijesSeleccionados.map(d => d.nombre).join(', ')
     const descripcion = `${pulsera}, talla ${largo} (${LARGOS.find(l => l.id === largo)?.cm} cm)${nombres ? ` · Dijes: ${nombres}` : ''}${ordenTexto ? ` · Orden: ${ordenTexto}` : ''}`
     const imagen_url = await generarImagenPulsera()
     setGenerandoImagen(false)
+    const desglose = {
+      cadena: { nombre: `${pulsera} · Talla ${largo}`, precio: PRECIO_BASE },
+      dijes: dijesSeleccionados.map(d => ({ nombre: d.nombre, precio: d.precio })),
+    }
     addItem({
       id: `custom-${Date.now()}`,
       slug: 'crear-pulsera',
@@ -183,7 +224,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
       descripcion_corta: descripcion,
       precio: precioTotal,
       imagen_url,
-    }, `${pulsera} · ${largo}`)
+    }, `${pulsera} · ${largo}`, undefined, desglose)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -247,29 +288,37 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
               <h2 style={{ fontFamily: 'var(--ff-serif)', fontSize: '30px', fontWeight: 300, color: 'var(--verde)', marginBottom: '28px' }}>
                 Tu pulsera base
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
-                {PULSERAS_BASE.map(p => (
-                  <div
-                    key={p.id}
-                    style={{
-                      padding: '20px 24px',
-                      border: '0.5px solid var(--verde)',
-                      background: 'rgba(28,61,46,0.03)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <p style={{ fontFamily: 'var(--ff-serif)', fontSize: '18px', color: 'var(--verde)', marginBottom: '3px' }}>{p.label}</p>
-                      <p style={{ fontSize: '11px', color: '#3a6b52', letterSpacing: '0.06em' }}>{p.desc}</p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--dorado)', border: '0.5px solid rgba(160,120,48,0.3)', padding: '3px 8px' }}>
-                        Incluida
-                      </span>
-                      <span style={{ color: 'var(--verde)', fontSize: '18px' }}>✓</span>
-                    </div>
-                  </div>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '40px' }}>
+                {PULSERAS_BASE.map(p => {
+                  const sel = cadena === p.id
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setCadena(p.id)}
+                      style={{
+                        padding: 0, cursor: 'pointer', textAlign: 'left',
+                        border: sel ? '1.5px solid var(--verde)' : '0.5px solid rgba(28,61,46,0.2)',
+                        background: sel ? 'rgba(28,61,46,0.04)' : 'transparent',
+                        display: 'flex', flexDirection: 'column',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {/* Imagen */}
+                      <div style={{ width: '100%', aspectRatio: '3/1', background: 'var(--crema-dark)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 24px', boxSizing: 'border-box' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={p.imagen} alt={p.label} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                      {/* Info */}
+                      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                        <div>
+                          <p style={{ fontFamily: 'var(--ff-serif)', fontSize: '16px', color: 'var(--verde)', marginBottom: '3px' }}>{p.label}</p>
+                          <p style={{ fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em', lineHeight: 1.5 }}>{p.desc}</p>
+                        </div>
+                        {sel && <span style={{ color: 'var(--verde)', fontSize: '16px', flexShrink: 0, marginTop: '2px' }}>✓</span>}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '40px' }}>
@@ -346,17 +395,9 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
                   </button>
                 ))}
               </div>
-              <button
-                onClick={() => setShowGuiaTallas(true)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                  marginBottom: '40px', fontSize: '10px', letterSpacing: '0.08em',
-                  color: '#3a6b52', textDecoration: 'underline', textUnderlineOffset: '3px',
-                  fontFamily: 'var(--ff-sans)',
-                }}
-              >
-                ¿Cuánto mide mi muñeca?
-              </button>
+              <div style={{ marginBottom: '40px' }}>
+                <BotonGuiaTallas />
+              </div>
             </div>
           )}
 
@@ -479,9 +520,46 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
             <div style={{ fontSize: '9px', letterSpacing: '0.28em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '24px' }}>
               Preview en tiempo real
             </div>
-            <div style={{ background: 'var(--crema)', padding: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid rgba(28,61,46,0.08)' }}>
-              <PrevisualizacionPulsera cadena={cadena ?? 'snake'} dijesSeleccionados={dijesSeleccionados} />
-            </div>
+            {/* Compositor unificado: foto pulsera + dijes */}
+            {(() => {
+              const pulseraImg = PULSERAS_BASE.find(p => p.id === cadena)?.imagen
+              const dijosActivos = step >= 3 ? dijesSeleccionados : []
+              return (
+                <>
+                  <div
+                    onClick={() => setPreviewOpen(true)}
+                    style={{ background: 'var(--crema)', border: '0.5px solid rgba(28,61,46,0.08)', padding: '20px 12px 12px', cursor: 'zoom-in', position: 'relative' }}
+                  >
+                    <PrevisualizacionPulsera cadena={cadena} dijesSeleccionados={dijosActivos} pulseraImg={pulseraImg} />
+                    <div style={{ position: 'absolute', bottom: '8px', right: '10px', fontSize: '8px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#3a6b52', opacity: 0.35 }}>
+                      Ver detalle
+                    </div>
+                  </div>
+
+                  {/* Modal de zoom */}
+                  {previewOpen && (
+                    <>
+                      <div onClick={() => setPreviewOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(28,61,46,0.45)', backdropFilter: 'blur(4px)', zIndex: 300 }} />
+                      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 301, background: 'var(--crema)', padding: '40px 36px 32px', width: 'min(640px, calc(100vw - 48px))', boxShadow: '0 24px 80px rgba(28,61,46,0.2)' }}>
+                        <button onClick={() => setPreviewOpen(false)} style={{ position: 'absolute', top: '16px', right: '20px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: 'rgba(28,61,46,0.4)', lineHeight: 1 }}>×</button>
+                        <div style={{ fontSize: '9px', letterSpacing: '0.28em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '20px' }}>Tu pulsera</div>
+                        <PrevisualizacionPulsera cadena={cadena} dijesSeleccionados={dijosActivos} pulseraImg={pulseraImg} />
+                        {dijosActivos.length > 0 && (
+                          <div style={{ marginTop: '20px', borderTop: '0.5px solid rgba(28,61,46,0.08)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em' }}>
+                              {PULSERAS_BASE.find(p => p.id === cadena)?.label} · Talla {largo}
+                            </div>
+                            {dijosActivos.map((d, i) => (
+                              <div key={i} style={{ fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em' }}>{d.nombre}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )
+            })()}
           </div>
 
           <div style={{ borderTop: '0.5px solid rgba(28,61,46,0.1)', paddingTop: '24px' }}>
@@ -613,7 +691,6 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
           </div>
         </>
       )}
-      {showGuiaTallas && <GuiaTallasModal onClose={() => setShowGuiaTallas(false)} />}
     </main>
   )
 }

@@ -140,7 +140,7 @@ export default function CartDrawer() {
         {/* Lista de ítems */}
         {items.length > 0 && (
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            {items.map(({ product, variante, cantidad, maxStock }) => {
+            {items.map(({ product, variante, cantidad, maxStock, desglose }) => {
               const key = product.id + '||' + (variante ?? '')
               return (
                 <div
@@ -184,7 +184,21 @@ export default function CartDrawer() {
                       {product.nombre}
                     </div>
 
-                    {variante && (
+                    {/* Desglose pulsera personalizada */}
+                    {desglose ? (
+                      <div style={{ marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em' }}>
+                          <span>{desglose.cadena.nombre}</span>
+                          <span>{formatPrice(desglose.cadena.precio)}</span>
+                        </div>
+                        {desglose.dijes.map((d, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#3a6b52', letterSpacing: '0.06em' }}>
+                            <span>{d.nombre}</span>
+                            <span>{formatPrice(d.precio)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : variante && (
                       <div style={{
                         fontSize: '10px',
                         letterSpacing: '0.1em',
@@ -200,7 +214,7 @@ export default function CartDrawer() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      marginTop: variante ? 0 : '10px',
+                      marginTop: (desglose || variante) ? 0 : '10px',
                     }}>
                       {/* Controles cantidad */}
                       <div style={{

@@ -1026,6 +1026,11 @@ function PanelBody({
   const [uploadingMain, setUploadingMain] = useState(false)
   const [uploadingPreview, setUploadingPreview] = useState(false)
 
+  // Extra images (pulseras / collares)
+  const [extraImgs, setExtraImgs] = useState<{ id?: string; url: string }[]>([])
+  const [pendingExtraFiles, setPendingExtraFiles] = useState<File[]>([])
+  const [uploadingExtra, setUploadingExtra] = useState(false)
+
   // Variantes form state (nuevo producto)
   const [vStocks, setVStocks] = useState<Record<string, string>>({})
 
@@ -1048,6 +1053,14 @@ function PanelBody({
   useEffect(() => {
     if (mode?.type === 'nuevo-producto' || mode?.type === 'editar-producto') {
       sb.from('categorias').select('id, nombre, slug').order('nombre').then(({ data }) => setCats(data ?? []))
+    }
+    if (mode?.type === 'editar-producto') {
+      globalThis.fetch(`/api/admin/imagenes?producto_id=${mode.producto.id}`)
+        .then(r => r.json())
+        .then(({ imagenes }) => setExtraImgs((imagenes ?? []).map((img: { id: string; url: string }) => ({ id: img.id, url: img.url }))))
+    } else {
+      setExtraImgs([])
+      setPendingExtraFiles([])
     }
   }, [mode])
 
@@ -1101,6 +1114,23 @@ function PanelBody({
       const json = await res.json()
       console.log('[admin] crear producto resultado:', json)
       if (!res.ok) { showToast(json.error ?? 'Error al crear', true); setPanelLoading(false); return }
+      // Upload pending extra images after getting the new product ID
+      if (pendingExtraFiles.length > 0 && json.id) {
+        const folder = catSlug || 'general'
+        for (let i = 0; i < pendingExtraFiles.length; i++) {
+          const file = pendingExtraFiles[i]
+          const path = `${folder}/${json.id}-extra-${i}-${Date.now()}`
+          const { error: upErr } = await sb.storage.from('productos').upload(path, file, { upsert: true, contentType: file.type })
+          if (!upErr) {
+            const { data: urlData } = sb.storage.from('productos').getPublicUrl(path)
+            await globalThis.fetch('/api/admin/imagenes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ producto_id: json.id, url: urlData.publicUrl, orden: i + 1 }),
+            })
+          }
+        }
+      }
       showToast('Producto creado')
     }
     setPanelLoading(false)
@@ -1111,8 +1141,12 @@ function PanelBody({
   async function guardarStock() {
     if (!var_) return
     setPanelLoading(true)
-    const { error } = await sb.from('variantes').update({ stock: parseInt(newStock) || 0 }).eq('id', var_.id)
-    if (error) { showToast('Error al actualizar', true); setPanelLoading(false); return }
+    const res = await globalThis.fetch('/api/admin/inventario', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: var_.id, stock: parseInt(newStock) || 0 }),
+    })
+    if (!res.ok) { showToast('Error al actualizar', true); setPanelLoading(false); return }
     showToast('Stock actualizado')
     setPanelLoading(false)
     onRefresh()
@@ -1229,6 +1263,47 @@ function PanelBody({
       setUploadingPreview(false)
     }
 
+    async function uploadExtra(file: File) {
+      if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
+      setUploadingExtra(true)
+      const folder = catSlug || 'general'
+      const path = `${folder}/${baseFilename}-extra-${Date.now()}`
+      const { error } = await sb.storage.from('productos').upload(path, file, { upsert: true, contentType: file.type })
+      if (error) { showToast('Error al subir: ' + error.message, true); setUploadingExtra(false); return }
+      const { data } = sb.storage.from('productos').getPublicUrl(path)
+      const url = data.publicUrl
+      if (mode.type === 'editar-producto') {
+        const orden = extraImgs.length + 1
+        const res = await globalThis.fetch('/api/admin/imagenes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ producto_id: mode.producto.id, url, orden }),
+        })
+        const json = await res.json()
+        if (res.ok) setExtraImgs(prev => [...prev, { id: json.id, url }])
+        else showToast('Error al guardar imagen', true)
+      } else {
+        // Nuevo producto: guardar archivo pendiente, mostrar preview
+        setPendingExtraFiles(prev => [...prev, file])
+        setExtraImgs(prev => [...prev, { url }])
+      }
+      setUploadingExtra(false)
+    }
+
+    async function eliminarExtra(idx: number) {
+      const img = extraImgs[idx]
+      if (img.id) {
+        await globalThis.fetch('/api/admin/imagenes', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: img.id }),
+        })
+      } else {
+        setPendingExtraFiles(prev => prev.filter((_, i) => i !== idx))
+      }
+      setExtraImgs(prev => prev.filter((_, i) => i !== idx))
+    }
+
     function ZonaImagen({ label, url, uploading, onChange, hint, accept = 'image/*' }: {
       label: string; url: string; uploading: boolean
       onChange: (f: File) => void; hint?: string; accept?: string
@@ -1319,13 +1394,39 @@ function PanelBody({
               )}
             </>
           ) : (
-            <ZonaImagen
-              label={esPulsera ? 'Imagen de la pulsera (también usada en preview de /crear-pulsera)' : 'Imagen del producto'}
-              url={pImagenUrl}
-              uploading={uploadingMain}
-              onChange={uploadMain}
-              hint="JPG, PNG o WEBP · Máx 5MB"
-            />
+            <>
+              <ZonaImagen
+                label={esPulsera ? 'Imagen principal (catálogo y preview de /crear-pulsera)' : 'Imagen del producto'}
+                url={pImagenUrl}
+                uploading={uploadingMain}
+                onChange={uploadMain}
+                hint="JPG, PNG o WEBP · Máx 5MB"
+              />
+              {/* Imágenes adicionales — solo pulseras y collares */}
+              {(esPulsera || catSlug === 'collares') && (
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={S.lbl}>Imágenes adicionales (carrusel)</label>
+                  {extraImgs.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      {extraImgs.map((img, i) => (
+                        <div key={i} style={{ position: 'relative', width: '64px', height: '64px', border: '0.5px solid rgba(28,61,46,.15)', overflow: 'hidden' }}>
+                          <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          <button
+                            onClick={() => eliminarExtra(i)}
+                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', width: '16px', height: '16px', cursor: 'pointer', fontSize: '10px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px' }}
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <label style={{ border: '0.5px dashed rgba(28,61,46,.22)', padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: '7px', cursor: uploadingExtra ? 'default' : 'pointer', color: '#3a6b52', fontSize: '10px', letterSpacing: '0.12em', background: 'var(--crema-dark)' }}>
+                    <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingExtra}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadExtra(f); e.target.value = '' }} />
+                    {uploadingExtra ? 'Subiendo…' : '+ Agregar imagen'}
+                  </label>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -1358,8 +1459,8 @@ function PanelBody({
           <Toggle on={pActivo} onChange={setPActivo} />
         </div>
 
-        <button onClick={guardarProducto} disabled={loading || uploadingMain || uploadingPreview} style={{ ...S.btnPrim, width:'100%', justifyContent:'center', padding:'12px', marginTop:'16px', opacity: (loading || uploadingMain || uploadingPreview) ? 0.7 : 1 }}>
-          {loading ? 'Guardando…' : uploadingMain || uploadingPreview ? 'Subiendo imagen…' : mode.type === 'editar-producto' ? 'Guardar cambios' : 'Crear producto'}
+        <button onClick={guardarProducto} disabled={loading || uploadingMain || uploadingPreview || uploadingExtra} style={{ ...S.btnPrim, width:'100%', justifyContent:'center', padding:'12px', marginTop:'16px', opacity: (loading || uploadingMain || uploadingPreview || uploadingExtra) ? 0.7 : 1 }}>
+          {loading ? 'Guardando…' : (uploadingMain || uploadingPreview || uploadingExtra) ? 'Subiendo imagen…' : mode.type === 'editar-producto' ? 'Guardar cambios' : 'Crear producto'}
         </button>
       </div>
     )
