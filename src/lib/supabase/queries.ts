@@ -28,18 +28,28 @@ export async function getProductosByCategoria(slug: string): Promise<Product[]> 
 
   const { data, error } = await supabase
     .from('productos')
-    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, imagenes_producto(url, alt, es_principal), variantes(stock, activa)')
+    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, preview_url, imagenes_producto(url, alt, es_principal), variantes(stock, activa)')
     .eq('categoria_id', cat.id)
     .eq('activo', true)
     .order('orden', { ascending: true })
 
   if (error) throw error
 
+  console.log(`[getProductosByCategoria] slug=${slug} total=${data?.length ?? 0}`)
+  if (slug === 'dijes' && data && data.length > 0) {
+    data.slice(0, 3).forEach(p => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      console.log(`[dijes] "${p.nombre}" imagen_url=${(p as any).imagen_url ?? 'null'} preview_url=${(p as any).preview_url ?? 'null'}`)
+    })
+  }
+
   type VarianteStockRow = { stock: number; activa: boolean }
   return (data ?? []).map(p => {
     const fromJoin = imagenPrincipal((p.imagenes_producto ?? []) as ImagenRow[])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const directUrl = (p as any).imagen_url as string | null | undefined
+    const pa = p as any
+    const directUrl = pa.imagen_url as string | null | undefined
+    const previewUrl = pa.preview_url as string | null | undefined
     const variantes = ((p.variantes ?? []) as VarianteStockRow[]).filter(v => v.activa)
     const agotado = variantes.length > 0 && variantes.every(v => v.stock === 0)
     return {
@@ -54,6 +64,7 @@ export async function getProductosByCategoria(slug: string): Promise<Product[]> 
       categoria_slug: slug,
       imagen_url: directUrl ?? fromJoin.imagen_url,
       imagen_alt: fromJoin.imagen_alt,
+      preview_url: previewUrl ?? undefined,
       agotado,
     }
   })

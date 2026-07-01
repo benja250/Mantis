@@ -21,7 +21,7 @@ interface Producto {
   id: string; slug: string; nombre: string; precio: number
   precio_comparar?: number; badge?: string; activo: boolean; destacado: boolean
   stock_total: number; categoria: string; categoria_id?: string
-  categoria_slug?: string; descripcion_corta?: string; imagen_url?: string
+  categoria_slug?: string; descripcion_corta?: string; imagen_url?: string; preview_url?: string
 }
 
 interface OrdenItem {
@@ -1346,7 +1346,7 @@ function PanelBody({
   // Image state — baseFilename ensures main+preview share the same storage key
   const [baseFilename] = useState(() => String(Date.now()))
   const [pImagenUrl, setPImagenUrl] = useState(prod?.imagen_url ?? '')
-  const [pPreviewUrl, setPPreviewUrl] = useState('')
+  const [pPreviewUrl, setPPreviewUrl] = useState(prod?.preview_url ?? '')
   const [uploadingMain, setUploadingMain] = useState(false)
   const [uploadingPreview, setUploadingPreview] = useState(false)
 
@@ -1408,7 +1408,9 @@ function PanelBody({
       descripcion_corta: pDesc.trim() || null,
       activo: pActivo,
       ...((pImagenUrl || pPreviewUrl) ? { imagen_url: pImagenUrl || pPreviewUrl } : {}),
+      ...(pPreviewUrl ? { preview_url: pPreviewUrl } : {}),
     }
+    console.log('[admin] guardarProducto — pImagenUrl:', pImagenUrl, '| pPreviewUrl:', pPreviewUrl)
     console.log('[admin] guardarProducto payload:', JSON.stringify(payload))
     if (m.type === 'editar-producto') {
       const res = await globalThis.fetch('/api/admin/productos', {
@@ -1566,11 +1568,13 @@ function PanelBody({
     const mostrarStock = mode.type === 'nuevo-producto' && varianteNames.length > 0
 
     async function uploadViaApi(file: File, path: string): Promise<string | null> {
+      console.log('[admin] uploadViaApi → file:', file.name, '| type:', file.type, '| size:', file.size, '| path:', path)
       const form = new FormData()
       form.append('file', file)
       form.append('path', path)
       const res = await globalThis.fetch('/api/admin/upload', { method: 'POST', body: form })
       const json = await res.json()
+      console.log('[admin] uploadViaApi ← status:', res.status, '| json:', JSON.stringify(json))
       if (!res.ok) { showToast('Error al subir: ' + (json.error ?? 'desconocido'), true); return null }
       return json.url as string
     }
@@ -1579,7 +1583,9 @@ function PanelBody({
       if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
       setUploadingMain(true)
       const folder = esDije ? 'dijes' : (catSlug || 'general')
+      console.log('[admin] uploadMain → esDije:', esDije, '| catSlug:', catSlug, '| folder:', folder, '| baseFilename:', baseFilename)
       const url = await uploadViaApi(file, `${folder}/${baseFilename}`)
+      console.log('[admin] uploadMain resultado url:', url)
       if (url) setPImagenUrl(url)
       setUploadingMain(false)
     }
@@ -1587,7 +1593,9 @@ function PanelBody({
     async function uploadPreview(file: File) {
       if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
       setUploadingPreview(true)
+      console.log('[admin] uploadPreview → baseFilename:', baseFilename)
       const url = await uploadViaApi(file, `dijes-preview/${baseFilename}`)
+      console.log('[admin] uploadPreview resultado url:', url)
       if (url) setPPreviewUrl(url)
       setUploadingPreview(false)
     }

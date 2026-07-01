@@ -20,9 +20,35 @@ const LARGOS = [
 
 const PRECIO_BASE = 12990
 
-function getPreviewUrl(imagen_url: string | undefined): string | undefined {
-  if (!imagen_url) return undefined
-  return imagen_url.replace('/dijes/', '/dijes-preview/')
+function getPreviewUrl(dije: { imagen_url?: string; preview_url?: string }): string | undefined {
+  // Usar preview_url de la DB si existe; derivar desde imagen_url solo como fallback
+  if (dije.preview_url) return dije.preview_url
+  if (!dije.imagen_url) return undefined
+  return dije.imagen_url.replace('/dijes/', '/dijes-preview/')
+}
+
+// Tamaño PNG de cada dije — nunca cambia sin importar cuántos se agreguen
+const DIJE_SIZE  = 64
+const CANVAS_W   = 340          // siempre fijo, sin scroll
+const CX_BASE    = CANVAS_W / 2 // siempre 170
+const AVAILABLE  = 260          // espacio horizontal de la cadena
+const MAX_STEP   = 92           // separación máx cuando hay pocos dijes
+const MIN_STEP   = 16           // separación mín, para 10 dijes muy juntos
+const MAX_LETRA  = Math.min(DIJE_SIZE * 1.65, 106)
+
+function calcPulseraLayout(n: number, hasImg: boolean) {
+  // step se reduce al agregar más dijes; DIJE_SIZE siempre igual
+  const step    = n <= 1 ? 0
+    : n === 3   ? 74   // excepción: 3 dijes más pegados que el MAX_STEP daría
+    : Math.max(MIN_STEP, Math.min(MAX_STEP, (AVAILABLE - DIJE_SIZE) / (n - 1)))
+  const IMG_H   = 110
+  const CHAIN_Y = hasImg ? 26 : 80
+  const CENTER_Y = CHAIN_Y + 8 + DIJE_SIZE / 2
+  const SVG_H   = hasImg
+    ? (n > 0 ? Math.ceil(CENTER_Y + MAX_LETRA / 2 + 10) : IMG_H + 10)
+    : 200
+  const startX  = CX_BASE - ((n - 1) * step) / 2
+  return { step, IMG_H, CHAIN_Y, CENTER_Y, SVG_H, startX }
 }
 
 function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { cadena: string; dijesSeleccionados: Product[]; pulseraImg?: string }) {
@@ -30,47 +56,30 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { c
   const chainDash = cadena === 'eslabones' ? '12 6' : 'none'
 
   const n = dijesSeleccionados.length
-  const AVAILABLE = 260
-  const MAX_SIZE  = 95
-  const MIN_SIZE  = 32
-  const RATIO     = 1.15
-  const dijeSize = n === 0 ? MAX_SIZE : Math.max(MIN_SIZE, Math.min(MAX_SIZE, AVAILABLE / (RATIO * (n - 1) + 1)))
-  const step = n <= 1 ? 0 : dijeSize * RATIO
-  const startX = 175 - ((n - 1) * step) / 2
-
-  const IMG_H = 110
-  const CHAIN_Y = pulseraImg ? 26 : 80
-  const ATTACH_Y = CHAIN_Y + 8
-  // Centro Y fijo: siempre a MAX_SIZE/2 del punto de enganche, independiente de cuántos dijes haya
-  const MAX_LETRA = Math.min(MAX_SIZE * 1.6, 140)
-  const CENTER_Y = ATTACH_Y + MAX_SIZE / 2
-  const SVG_H = pulseraImg
-    ? (n > 0 ? Math.ceil(CENTER_Y + MAX_LETRA / 2 + 10) : IMG_H + 10)
-    : 200
+  const { step, IMG_H, CHAIN_Y, CENTER_Y, SVG_H, startX } = calcPulseraLayout(n, !!pulseraImg)
 
   return (
-    <svg width="100%" viewBox={`0 0 340 ${SVG_H}`} style={{ display: 'block' }}>
+    <svg width="100%" viewBox={`0 0 ${CANVAS_W} ${SVG_H}`} style={{ display: 'block' }}>
       {pulseraImg ? (
         <image href={pulseraImg} x="20" y="0" width="300" height={IMG_H} preserveAspectRatio="xMidYMid meet" />
       ) : (
         <>
-          <path d="M30 80 Q170 80 310 80" fill="none" stroke="#A07830" strokeWidth={chainStrokeWidth} strokeLinecap="round" strokeDasharray={chainDash} />
+          <path d={`M30 ${CHAIN_Y} Q${CX_BASE} ${CHAIN_Y} 310 ${CHAIN_Y}`} fill="none" stroke="#A07830" strokeWidth={chainStrokeWidth} strokeLinecap="round" strokeDasharray={chainDash} />
           {cadena === 'snake' && (
-            <path d="M30 80 Q170 80 310 80" fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 6" />
+            <path d={`M30 ${CHAIN_Y} Q${CX_BASE} ${CHAIN_Y} 310 ${CHAIN_Y}`} fill="none" stroke="#C8A96E" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 6" />
           )}
-          <rect x="16" y="73" width="16" height="14" rx="4" fill="#A07830" />
-          <circle cx="318" cy="80" r="8" fill="none" stroke="#A07830" strokeWidth="2" />
-          <circle cx="318" cy="80" r="3" fill="#A07830" />
+          <rect x="16" y={CHAIN_Y - 7} width="16" height="14" rx="4" fill="#A07830" />
+          <circle cx="318" cy={CHAIN_Y} r="8" fill="none" stroke="#A07830" strokeWidth="2" />
+          <circle cx="318" cy={CHAIN_Y} r="3" fill="#A07830" />
         </>
       )}
 
       {dijesSeleccionados.map((dije, i) => {
         const x = startX + i * step
-        const previewUrl = getPreviewUrl(dije.imagen_url)
+        const previewUrl = getPreviewUrl(dije)
         const isLetra = dije.nombre.toLowerCase().includes('letra')
-        const renderSize = isLetra ? MAX_LETRA : dijeSize
+        const renderSize = isLetra ? MAX_LETRA : DIJE_SIZE
         const renderHalf = renderSize / 2
-        // Tope del dije: CENTER_Y - renderHalf (todos centrados a la misma altura)
         const dijeTopY = CENTER_Y - renderHalf
         return (
           <g key={`${dije.id}-${i}`}>
@@ -88,9 +97,9 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { c
 
       {n === 0 && !pulseraImg && (
         <g opacity="0.15">
-          <line x1="175" y1="84" x2="175" y2="100" stroke="#A07830" strokeWidth="1.5" />
-          <circle cx="175" cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
-          <circle cx="175" cy="118" r="10" fill="none" stroke="#A07830" strokeWidth="1" strokeDasharray="3 2" />
+          <line x1={CX_BASE} y1="84" x2={CX_BASE} y2="100" stroke="#A07830" strokeWidth="1.5" />
+          <circle cx={CX_BASE} cy="99" r="3" fill="none" stroke="#A07830" strokeWidth="1" />
+          <circle cx={CX_BASE} cy="118" r="10" fill="none" stroke="#A07830" strokeWidth="1" strokeDasharray="3 2" />
         </g>
       )}
     </svg>
@@ -100,7 +109,9 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { c
 export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   const { addItem } = useCartStore()
 
-  console.log('[CrearPulsera] dijes desde Supabase:', dijes.map(d => ({ id: d.id, nombre: d.nombre, imagen_url: d.imagen_url })))
+  console.log('[CrearPulsera] primeros 3 dijes recibidos como prop:',
+    dijes.slice(0, 3).map(d => ({ nombre: d.nombre, imagen_url: d.imagen_url ?? 'null', preview_url: d.preview_url ?? 'null' }))
+  )
 
   const [step, setStep] = useState(1)
   const [cadena, setCadena] = useState<string>(PULSERAS_BASE[0].id)
@@ -132,18 +143,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
     const n = dijesSeleccionados.length
     const pulseraBase = PULSERAS_BASE.find(p => p.id === cadena)
 
-    const AVAILABLE = 260, MAX_SIZE = 95, MIN_SIZE = 32, RATIO = 1.15
-    const dijeSize = n === 0 ? MAX_SIZE : Math.max(MIN_SIZE, Math.min(MAX_SIZE, AVAILABLE / (RATIO * (n - 1) + 1)))
-    const half = dijeSize / 2
-    const step = n <= 1 ? 0 : dijeSize * RATIO
-    const startX = 175 - ((n - 1) * step) / 2
-
-    const IMG_H = 110
-    const CHAIN_Y = 26
-    const ATTACH_Y = CHAIN_Y + 8
-    const MAX_LETRA = Math.min(MAX_SIZE * 1.6, 140)
-    const CENTER_Y = ATTACH_Y + MAX_SIZE / 2
-    const SVG_H = n > 0 ? Math.ceil(CENTER_Y + MAX_LETRA / 2 + 10) : IMG_H + 10
+    const { step, IMG_H, CHAIN_Y, CENTER_Y, SVG_H, startX } = calcPulseraLayout(n, !!pulseraBase?.imagen)
 
     async function toBase64(url: string): Promise<string | null> {
       try {
@@ -162,14 +162,15 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
     const [pulseraB64, ...dijeBases64] = await Promise.all([
       pulseraBase?.imagen ? toBase64(pulseraBase.imagen) : Promise.resolve(null),
       ...dijesSeleccionados.map(dije => {
-        const url = getPreviewUrl(dije.imagen_url)
+        const url = getPreviewUrl(dije)
+        console.log(`[CrearPulsera] generando imagen — dije "${dije.nombre}" preview_url usado:`, url ?? 'null')
         return url ? toBase64(url) : Promise.resolve(null)
       }),
     ])
 
     const pulseraEl = pulseraB64
       ? `<image href="${pulseraB64}" x="20" y="0" width="300" height="${IMG_H}" preserveAspectRatio="xMidYMid meet"/>`
-      : `<path d="M30 ${CHAIN_Y} Q170 ${CHAIN_Y} 310 ${CHAIN_Y}" fill="none" stroke="#A07830" stroke-width="3" stroke-linecap="round"/>` +
+      : `<path d="M30 ${CHAIN_Y} Q${CX_BASE} ${CHAIN_Y} 310 ${CHAIN_Y}" fill="none" stroke="#A07830" stroke-width="3" stroke-linecap="round"/>` +
         `<rect x="16" y="${CHAIN_Y - 7}" width="16" height="14" rx="4" fill="#A07830"/>` +
         `<circle cx="318" cy="${CHAIN_Y}" r="8" fill="none" stroke="#A07830" stroke-width="2"/>` +
         `<circle cx="318" cy="${CHAIN_Y}" r="3" fill="#A07830"/>`
@@ -178,7 +179,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
       const x = startX + i * step
       const b64 = dijeBases64[i]
       const isLetra = dije.nombre.toLowerCase().includes('letra')
-      const renderSize = isLetra ? MAX_LETRA : dijeSize
+      const renderSize = isLetra ? MAX_LETRA : DIJE_SIZE
       const renderHalf = renderSize / 2
       const dijeTopY = CENTER_Y - renderHalf
       if (!b64) {
@@ -189,10 +190,9 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
     }).join('')
 
     const svg =
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 ${SVG_H}">` +
-      `<rect width="340" height="${SVG_H}" fill="#F5F0E8"/>` +
-      pulseraEl + dijeEls +
-      `</svg>`
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS_W} ${SVG_H}">` +
+      `<rect width="${CANVAS_W}" height="${SVG_H}" fill="#F5F0E8"/>` +
+      pulseraEl + dijeEls + '</svg>'
 
     return 'data:image/svg+xml,' + encodeURIComponent(svg)
   }

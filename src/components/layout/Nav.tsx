@@ -144,14 +144,7 @@ export default function Nav() {
 
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className="nav-mobile-menu" style={{ zIndex: 150 }}>
-          <button
-            onClick={() => setMenuOpen(false)}
-            style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }}
-            aria-label="Cerrar menú"
-          >
-            <CloseIcon />
-          </button>
+        <div className="nav-mobile-menu">
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}

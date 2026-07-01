@@ -11,6 +11,7 @@ export interface Product {
   badge_variant?: 'default' | 'outline'
   imagen_url?: string
   imagen_alt?: string
+  preview_url?: string
   categoria?: string
   categoria_slug?: string
   agotado?: boolean       // true cuando todas las variantes tienen stock = 0

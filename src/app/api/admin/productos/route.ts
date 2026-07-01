@@ -4,7 +4,7 @@ export async function GET() {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('productos')
-    .select('id, slug, nombre, precio, precio_comparar, badge, activo, destacado, descripcion_corta, imagen_url, categorias(id, nombre, slug, orden), variantes(stock, activa)')
+    .select('id, slug, nombre, precio, precio_comparar, badge, activo, destacado, descripcion_corta, imagen_url, preview_url, categorias(id, nombre, slug, orden), variantes(stock, activa)')
     .order('nombre')
 
   if (error) {
@@ -49,12 +49,18 @@ export async function PATCH(request: Request) {
   const { id, ...fields } = body
   if (!id) return Response.json({ error: 'id requerido' }, { status: 400 })
 
+  console.log('[api/admin/productos PATCH] id:', id)
+  console.log('[api/admin/productos PATCH] fields:', JSON.stringify(fields))
+  console.log('[api/admin/productos PATCH] imagen_url:', fields.imagen_url ?? '(no enviado)')
+  console.log('[api/admin/productos PATCH] preview_url:', fields.preview_url ?? '(no enviado)')
+
   const supabase = createServiceClient()
-  const { error } = await supabase.from('productos').update(fields).eq('id', id)
+  const { data, error } = await supabase.from('productos').update(fields).eq('id', id).select('id, imagen_url, preview_url').single()
   if (error) {
-    console.error('[api/admin/productos] error UPDATE:', error)
+    console.error('[api/admin/productos PATCH] error UPDATE:', JSON.stringify(error))
     return Response.json({ error: error.message }, { status: 500 })
   }
+  console.log('[api/admin/productos PATCH] fila resultante:', JSON.stringify(data))
   return Response.json({ ok: true })
 }
 
