@@ -1070,17 +1070,18 @@ function SeccionEdicion({ onSetAction }: { onSetAction: (el: React.ReactNode) =>
     const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.92))
     if (!blob) { setMsg({ text: 'Error al procesar imagen', error: true }); setUploading(false); return }
 
-    const sb = createClient()
     let targetPath: string
     if (editingName) {
       targetPath = `general/${editingName}`
     } else {
-      const { data: files } = await sb.storage.from('productos').list('general')
-      targetPath = `general/hero-${(files ?? []).filter(f => f.name.startsWith('hero')).length}.jpg`
+      targetPath = `general/hero-${images.length}.jpg`
     }
 
-    const { error } = await sb.storage.from('productos').upload(targetPath, blob, { upsert: true, contentType: 'image/jpeg' })
-    if (error) { setMsg({ text: 'Error: ' + error.message, error: true }); setUploading(false); return }
+    const heroForm = new FormData()
+    heroForm.append('file', blob, targetPath.split('/').pop())
+    heroForm.append('path', targetPath)
+    const upRes = await fetch('/api/admin/upload', { method: 'POST', body: heroForm })
+    if (!upRes.ok) { const j = await upRes.json(); setMsg({ text: 'Error: ' + (j.error ?? 'desconocido'), error: true }); setUploading(false); return }
 
     setMsg({ text: editingName ? 'Foto actualizada.' : 'Foto agregada.', error: false })
     setUploading(false); setStep('list'); setEditingName(null); setCropSrc(null); setCropFile(null)
@@ -1443,13 +1444,16 @@ function PanelBody({
         for (let i = 0; i < pendingExtraFiles.length; i++) {
           const file = pendingExtraFiles[i]
           const path = `${folder}/${json.id}-extra-${i}-${Date.now()}`
-          const { error: upErr } = await sb.storage.from('productos').upload(path, file, { upsert: true, contentType: file.type })
-          if (!upErr) {
-            const { data: urlData } = sb.storage.from('productos').getPublicUrl(path)
+          const form = new FormData()
+          form.append('file', file)
+          form.append('path', path)
+          const upRes = await globalThis.fetch('/api/admin/upload', { method: 'POST', body: form })
+          if (upRes.ok) {
+            const { url: upUrl } = await upRes.json()
             await globalThis.fetch('/api/admin/imagenes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ producto_id: json.id, url: urlData.publicUrl, orden: i + 1 }),
+              body: JSON.stringify({ producto_id: json.id, url: upUrl, orden: i + 1 }),
             })
           }
         }
@@ -1561,28 +1565,30 @@ function PanelBody({
     const varianteNames = getVarianteNames(catSlug)
     const mostrarStock = mode.type === 'nuevo-producto' && varianteNames.length > 0
 
+    async function uploadViaApi(file: File, path: string): Promise<string | null> {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('path', path)
+      const res = await globalThis.fetch('/api/admin/upload', { method: 'POST', body: form })
+      const json = await res.json()
+      if (!res.ok) { showToast('Error al subir: ' + (json.error ?? 'desconocido'), true); return null }
+      return json.url as string
+    }
+
     async function uploadMain(file: File) {
       if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
       setUploadingMain(true)
       const folder = esDije ? 'dijes' : (catSlug || 'general')
-      const { error } = await sb.storage
-        .from('productos')
-        .upload(`${folder}/${baseFilename}`, file, { upsert: true, contentType: file.type })
-      if (error) { showToast('Error al subir imagen: ' + error.message, true); setUploadingMain(false); return }
-      const { data } = sb.storage.from('productos').getPublicUrl(`${folder}/${baseFilename}`)
-      setPImagenUrl(data.publicUrl)
+      const url = await uploadViaApi(file, `${folder}/${baseFilename}`)
+      if (url) setPImagenUrl(url)
       setUploadingMain(false)
     }
 
     async function uploadPreview(file: File) {
       if (file.size > 5 * 1024 * 1024) { showToast('Máx 5MB', true); return }
       setUploadingPreview(true)
-      const { error } = await sb.storage
-        .from('productos')
-        .upload(`dijes-preview/${baseFilename}`, file, { upsert: true, contentType: file.type })
-      if (error) { showToast('Error al subir preview: ' + error.message, true); setUploadingPreview(false); return }
-      const { data } = sb.storage.from('productos').getPublicUrl(`dijes-preview/${baseFilename}`)
-      setPPreviewUrl(data.publicUrl)
+      const url = await uploadViaApi(file, `dijes-preview/${baseFilename}`)
+      if (url) setPPreviewUrl(url)
       setUploadingPreview(false)
     }
 
@@ -1591,10 +1597,8 @@ function PanelBody({
       setUploadingExtra(true)
       const folder = catSlug || 'general'
       const path = `${folder}/${baseFilename}-extra-${Date.now()}`
-      const { error } = await sb.storage.from('productos').upload(path, file, { upsert: true, contentType: file.type })
-      if (error) { showToast('Error al subir: ' + error.message, true); setUploadingExtra(false); return }
-      const { data } = sb.storage.from('productos').getPublicUrl(path)
-      const url = data.publicUrl
+      const url = await uploadViaApi(file, path)
+      if (!url) { setUploadingExtra(false); return }
       if (mode?.type === 'editar-producto') {
         const orden = extraImgs.length + 1
         const res = await globalThis.fetch('/api/admin/imagenes', {

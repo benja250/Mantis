@@ -44,21 +44,13 @@ export default async function DijesDestacados() {
       </div>
 
       <style>{`
-        .dijes-hero-wrap {
-          background: var(--crema-dark);
-          box-shadow: 0 8px 40px rgba(28,61,46,0.10), 0 2px 8px rgba(28,61,46,0.06);
-          padding: 24px;
-          margin: 0 auto;
-          width: 100%;
-          max-width: 100%;
-        }
+        .dijes-hero-wrap { margin: 0 auto; width: 100%; max-width: 100%; }
         .dijes-hero-img {
           display: block;
           height: auto;
           object-fit: contain;
           margin: 0 auto;
           width: 100%;
-          filter: drop-shadow(0 6px 24px rgba(28,61,46,0.14)) drop-shadow(0 2px 6px rgba(160,120,48,0.10));
         }
         @media (min-width: 640px)  { .dijes-hero-wrap { max-width: 95%; } }
         @media (min-width: 1024px) { .dijes-hero-wrap { max-width: 90%; } }

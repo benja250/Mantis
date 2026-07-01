@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCartStore } from '@/hooks/useCart'
@@ -39,6 +39,11 @@ export default function Nav() {
   const { totalItems, openCart } = useCartStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [menuOpen])
 
   return (
     <>
@@ -139,7 +144,14 @@ export default function Nav() {
 
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className="nav-mobile-menu" style={{ zIndex: 99 }}>
+        <div className="nav-mobile-menu" style={{ zIndex: 150 }}>
+          <button
+            onClick={() => setMenuOpen(false)}
+            style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }}
+            aria-label="Cerrar menú"
+          >
+            <CloseIcon />
+          </button>
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}
