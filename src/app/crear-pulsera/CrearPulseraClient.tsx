@@ -84,7 +84,14 @@ function PrevisualizacionPulsera({ cadena, dijesSeleccionados, pulseraImg }: { c
         return (
           <g key={`${dije.id}-${i}`}>
             {previewUrl ? (
-              <image href={previewUrl} x={x - renderHalf} y={dijeTopY} width={renderSize} height={renderSize} preserveAspectRatio="xMidYMid meet" />
+              <foreignObject x={x - renderHalf} y={dijeTopY} width={renderSize} height={renderSize}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }}
+                />
+              </foreignObject>
             ) : (
               <>
                 <circle cx={x} cy={CENTER_Y} r={renderHalf * 0.8} fill="none" stroke="#C8A96E" strokeWidth="1.2" />
