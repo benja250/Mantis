@@ -147,10 +147,11 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
 
         {/* Columna izquierda — carrusel */}
         {(() => {
-          // Construir lista de imágenes: primero las de imagenes_producto, si no hay usar imagen_url
-          const imgs: string[] = detail.imagenes && detail.imagenes.length > 0
-            ? detail.imagenes.map(img => img.url)
-            : (detail.imagen_url ? [detail.imagen_url] : [])
+          // Main image first, then extra images from imagenes_producto
+          const extras = (detail.imagenes ?? []).map(img => img.url)
+          const imgs: string[] = detail.imagen_url
+            ? [detail.imagen_url, ...extras]
+            : extras
           const total = imgs.length
           const currentImg = imgs[imgIdx] ?? detail.imagen_url
           const currentAlt = (detail.imagenes?.[imgIdx]?.alt) ?? detail.imagen_alt ?? detail.nombre
@@ -323,8 +324,8 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
             </p>
           )}
 
-          {/* Selector de talla */}
-          {detail.variantes.length > 0 && (
+          {/* Selector de talla — solo pulseras */}
+          {detail.variantes.length > 0 && rawProduct?.categoria_slug !== 'collares' && (
             <div>
               <div style={{
                 fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase',
@@ -368,9 +369,11 @@ export default function ProductModal({ product: rawProduct, onClose }: Props) {
                   Últimas {stockActual} unidades
                 </p>
               )}
-              <div style={{ marginTop: '10px' }}>
-                <BotonGuiaTallas />
-              </div>
+              {rawProduct?.categoria_slug === 'pulseras' && (
+                <div style={{ marginTop: '10px' }}>
+                  <BotonGuiaTallas />
+                </div>
+              )}
             </div>
           )}
 

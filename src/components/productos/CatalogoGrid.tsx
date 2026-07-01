@@ -7,6 +7,8 @@ import type { Product } from '@/types'
 
 export default function CatalogoGrid({ products }: { products: Product[] }) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const rem = products.length % 3
+  const fillers = rem === 0 ? 0 : 3 - rem
 
   return (
     <>
@@ -17,6 +19,9 @@ export default function CatalogoGrid({ products }: { products: Product[] }) {
             product={product}
             onOpenModal={(p) => setSelectedProduct(p)}
           />
+        ))}
+        {Array.from({ length: fillers }).map((_, i) => (
+          <div key={`filler-${i}`} style={{ background: 'var(--crema)' }} />
         ))}
       </div>
 

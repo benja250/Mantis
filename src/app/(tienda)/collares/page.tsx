@@ -12,7 +12,7 @@ export default async function CollaresPage() {
       <div className="catalog-header" style={{
         padding: '60px 48px 36px',
         display: 'flex',
-        alignItems: 'baseline',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
         borderBottom: '0.5px solid rgba(28,61,46,0.08)',
       }}>

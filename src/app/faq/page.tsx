@@ -5,11 +5,11 @@ import { useState } from 'react'
 const PREGUNTAS = [
   {
     q: '¿Cuánto demora el despacho?',
-    a: 'Para la Región Metropolitana despachamos con Paket: 24–48 horas hábiles. Para regiones, usamos Starken: 2–8 días hábiles. Si compras antes de las 18:00, el pedido sale el mismo día.',
+    a: 'Para la Región Metropolitana despachamos con Paket: 24–48 horas hábiles. Para regiones, usamos Starken: 2–8 días hábiles.',
   },
   {
     q: '¿Cómo pago?',
-    a: 'Por ahora aceptamos transferencia bancaria. Al confirmar tu pedido te mostramos los datos bancarios. Una vez que envías el comprobante, procesamos tu pedido.',
+    a: 'Aceptamos pago seguro con Flow — tarjeta de crédito, débito o RedCompra. Al confirmar tus datos de envío serás redirigida a la plataforma de pago de Flow para completar la transacción de forma segura.',
   },
   {
     q: '¿Puedo cambiar mi pedido?',
@@ -17,7 +17,7 @@ const PREGUNTAS = [
   },
   {
     q: '¿Qué pasa si llega con defecto?',
-    a: 'Tienes 48 horas desde que recibes tu pedido para reportar defectos de fabricación visibles. Escríbenos por WhatsApp o email con foto del problema y tu número de orden, y nos hacemos cargo sin costo.',
+    a: 'Tienes 48 horas desde que recibes tu pedido para reportar defectos de fabricación visibles. Escríbenos por WhatsApp o email con foto del problema y tu número de orden.',
   },
   {
     q: '¿Las joyas son aptas para piel sensible?',

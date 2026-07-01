@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 
 interface ProductoResultado {
   id: string
@@ -180,11 +179,11 @@ export default function BuscadorOverlay({ open, onClose }: Props) {
                     overflow: 'hidden',
                   }}>
                     {p.imagen_url && (
-                      <Image
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
                         src={p.imagen_url}
                         alt={p.nombre}
-                        fill
-                        style={{ objectFit: 'cover' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       />
                     )}
                   </div>

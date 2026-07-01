@@ -1,4 +1,20 @@
 import Link from 'next/link'
+import { createServiceClient } from '@/lib/supabase/server'
+import HeroCarousel from './HeroCarousel'
+
+async function getHeroImages(): Promise<string[]> {
+  try {
+    const sb = createServiceClient()
+    const { data: files } = await sb.storage.from('productos').list('general')
+    if (!files?.length) return []
+    const heroFiles = files
+      .filter(f => f.name.startsWith('hero'))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    return heroFiles.map(
+      f => sb.storage.from('productos').getPublicUrl(`general/${f.name}`).data.publicUrl
+    )
+  } catch { return [] }
+}
 
 function BraceletSVG() {
   return (
@@ -45,9 +61,11 @@ function BraceletSVG() {
   )
 }
 
-export default function Hero() {
+export default async function Hero() {
+  const heroImages = await getHeroImages()
+  const hasImages = heroImages.length > 0
   return (
-    <section className="grid grid-cols-2 hero-section" style={{ minHeight: '520px' }}>
+    <section className="grid grid-cols-2 hero-section" style={{ height: '620px' }}>
 
       {/* Columna izquierda */}
       <div className="flex flex-col justify-center bg-crema hero-left" style={{ padding: '64px 48px' }}>
@@ -75,22 +93,29 @@ export default function Hero() {
 
       {/* Columna derecha */}
       <div className="bg-crema-dark flex items-center justify-center relative overflow-hidden hero-right">
-        {/* Círculos decorativos */}
-        <div className="absolute w-[340px] h-[340px] rounded-full"
-          style={{ border: '0.5px solid rgba(28,61,46,0.07)' }} />
-        <div className="absolute w-[460px] h-[460px] rounded-full"
-          style={{ border: '0.5px solid rgba(28,61,46,0.04)' }} />
+        {/* Círculos decorativos (solo sin foto) */}
+        {!hasImages && <>
+          <div className="absolute w-[340px] h-[340px] rounded-full"
+            style={{ border: '0.5px solid rgba(28,61,46,0.07)' }} />
+          <div className="absolute w-[460px] h-[460px] rounded-full"
+            style={{ border: '0.5px solid rgba(28,61,46,0.04)' }} />
+        </>}
 
-        {/* Pulsera + label */}
-        <div className="flex flex-col items-center gap-5 z-10">
-          <BraceletSVG />
-          <div className="font-serif text-[13px] italic text-verde-light tracking-[0.1em]">
-            Pulsera dorada · Bañada en oro 18k
+        {/* SVG ilustración (solo sin foto) */}
+        {!hasImages && (
+          <div className="flex flex-col items-center gap-5 z-10">
+            <BraceletSVG />
+            <div className="font-serif text-[13px] italic text-verde-light tracking-[0.1em]">
+              Pulsera dorada · Bañada en oro 18k
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Carrusel de fotos */}
+        {hasImages && <HeroCarousel images={heroImages} />}
 
         {/* Esquina inferior */}
-        <div className="absolute bottom-7 right-7 text-[9px] tracking-[0.28em] text-verde-light uppercase">
+        <div className="absolute bottom-7 right-7 text-[9px] tracking-[0.28em] uppercase z-10" style={{ color: 'rgba(28,61,46,0.9)', background: 'rgba(245,240,232,0.55)', padding: '5px 10px', backdropFilter: 'blur(4px)' }}>
           Nueva colección 2026
         </div>
       </div>

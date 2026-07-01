@@ -44,23 +44,33 @@ export default async function DijesDestacados() {
       </div>
 
       <style>{`
+        .dijes-hero-wrap {
+          background: var(--crema-dark);
+          box-shadow: 0 8px 40px rgba(28,61,46,0.10), 0 2px 8px rgba(28,61,46,0.06);
+          padding: 24px;
+          margin: 0 auto;
+          width: 100%;
+          max-width: 100%;
+        }
         .dijes-hero-img {
           display: block;
           height: auto;
           object-fit: contain;
           margin: 0 auto;
           width: 100%;
-          max-width: 100%;
+          filter: drop-shadow(0 6px 24px rgba(28,61,46,0.14)) drop-shadow(0 2px 6px rgba(160,120,48,0.10));
         }
-        @media (min-width: 640px)  { .dijes-hero-img { max-width: 95%; } }
-        @media (min-width: 1024px) { .dijes-hero-img { max-width: 90%; } }
+        @media (min-width: 640px)  { .dijes-hero-wrap { max-width: 95%; } }
+        @media (min-width: 1024px) { .dijes-hero-wrap { max-width: 90%; } }
       `}</style>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/images/dijes-hero.jpeg"
-        alt="Dijes Mantis — personaliza tu pulsera"
-        className="dijes-hero-img"
-      />
+      <div className="dijes-hero-wrap">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/dijes-hero.jpg"
+          alt="Dijes Mantis — personaliza tu pulsera"
+          className="dijes-hero-img"
+        />
+      </div>
     </section>
   )
 }

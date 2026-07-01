@@ -15,14 +15,6 @@ const crema  = '#F5F0E8'
 const dorado = '#A07830'
 const gris   = '#6B7280'
 
-// ── Bank transfer data (configure via env vars) ───────────────────────────────
-
-const banco = process.env.BANK_BANCO    ?? 'Banco de Chile'
-const titular = process.env.BANK_HOLDER ?? 'Mantis Joyas SpA'
-const rut     = process.env.BANK_RUT    ?? '12.345.678-9'
-const cuenta  = process.env.BANK_CUENTA ?? '000-00000-00'
-const tipoCta = process.env.BANK_TIPO   ?? 'Cuenta Corriente'
-const emailTrf = process.env.BANK_EMAIL ?? 'pagos@mantisjoyas.cl'
 
 // ── Shared layout ─────────────────────────────────────────────────────────────
 
@@ -136,7 +128,7 @@ export function emailConfirmacion(d: DatosEmailPedido): string {
 
     <p style="margin:0 0 24px;font-size:14px;color:${verde};line-height:1.8;">
       Hola ${d.cliente_nombre}, gracias por tu compra.<br/>
-      Tu pedido está reservado y a la espera de tu transferencia. Una vez que la confirmes, lo prepararemos con mucho cuidado.
+      Hemos recibido tu pedido y tu pago fue procesado de forma segura con Flow. Lo prepararemos con mucho cuidado.
     </p>
 
     ${divider()}
@@ -164,20 +156,15 @@ export function emailConfirmacion(d: DatosEmailPedido): string {
     </table>
 
     ${divider()}
-    ${sectionTitle('Datos para la transferencia bancaria')}
+    ${sectionTitle('Pago procesado con Flow')}
 
     <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(28,61,46,0.04);border-left:2px solid ${dorado};padding:20px 24px;margin-bottom:16px;">
-      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">Banco</td><td style="padding:4px 0;font-size:13px;color:${verde};">${banco}</td></tr>
-      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">Titular</td><td style="padding:4px 0;font-size:13px;color:${verde};">${titular}</td></tr>
-      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">RUT</td><td style="padding:4px 0;font-size:13px;color:${verde};">${rut}</td></tr>
-      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">Tipo de cuenta</td><td style="padding:4px 0;font-size:13px;color:${verde};">${tipoCta}</td></tr>
-      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">N° de cuenta</td><td style="padding:4px 0;font-size:15px;color:${verde};letter-spacing:0.06em;">${cuenta}</td></tr>
-      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">Email</td><td style="padding:4px 0;font-size:13px;color:${verde};">${emailTrf}</td></tr>
-      <tr><td style="padding:10px 24px 4px 0;font-size:11px;color:${gris};">Monto exacto</td><td style="padding:10px 0 4px;font-size:17px;color:${dorado};font-weight:400;">${fmt(d.total)}</td></tr>
+      <tr><td style="padding:4px 24px 4px 0;font-size:11px;color:${gris};">Método de pago</td><td style="padding:4px 0;font-size:13px;color:${verde};">Flow — tarjeta de crédito, débito o RedCompra</td></tr>
+      <tr><td style="padding:10px 24px 4px 0;font-size:11px;color:${gris};">Total pagado</td><td style="padding:10px 0 4px;font-size:17px;color:${dorado};font-weight:400;">${fmt(d.total)}</td></tr>
     </table>
 
     <p style="margin:0;font-size:12px;color:${gris};line-height:1.8;">
-      Por favor adjunta el comprobante al email de transferencia. Tu pedido se procesará en cuanto confirmemos el pago.
+      Tu pago fue procesado de forma segura. Comenzaremos a preparar tu pedido de inmediato.
     </p>
   `
   return wrap(content)
@@ -197,7 +184,7 @@ export function emailAdmin(d: DatosEmailPedido & { cliente_telefono?: string; di
 
   const content = `
     ${h1(`Nuevo pedido ${numOrden(d.numero)}`)}
-    ${label(fmt(d.total) + ' · Pendiente de transferencia')}
+    ${label(fmt(d.total) + ' · Pago con Flow')}
 
     ${divider()}
     ${sectionTitle('Cliente')}

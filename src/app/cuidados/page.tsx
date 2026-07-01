@@ -100,8 +100,8 @@ export default function CuidadosPage() {
         }} />
         <div style={{
           minHeight: '300px',
-          display: 'flex', alignItems: 'flex-end',
-          padding: '40px 40px 0',
+          display: 'flex', alignItems: 'center',
+          padding: '40px',
           position: 'relative', zIndex: 1,
         }}>
           <div style={{ maxWidth: '560px' }}>

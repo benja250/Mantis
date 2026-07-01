@@ -117,7 +117,7 @@ export default function CrearPulseraClient({ dijes }: { dijes: Product[] }) {
   const preciosDijes = dijesSeleccionados.reduce((sum, d) => sum + d.precio, 0)
 
   function addDije(dije: Product) {
-    setDijesSeleccionados(prev => [...prev, dije])
+    setDijesSeleccionados(prev => prev.length >= 10 ? prev : [...prev, dije])
   }
 
   function removeDijeById(id: string) {

@@ -300,9 +300,11 @@ export default function CartDrawer() {
                 <div key={p.id} style={{
                   display: 'flex', gap: '12px', alignItems: 'center',
                 }}>
-                  <div style={{
-                    width: '40px', height: '40px', background: 'var(--crema-dark)', flexShrink: 0,
-                  }} />
+                  <div style={{ width: '40px', height: '40px', background: 'var(--crema-dark)', flexShrink: 0, overflow: 'hidden' }}>
+                    {p.imagen_url && (
+                      <img src={p.imagen_url} alt={p.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    )}
+                  </div>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: '12px', color: 'var(--verde)', marginBottom: '2px' }}>{p.nombre}</p>
                     <p style={{ fontSize: '11px', color: 'var(--dorado)' }}>{formatPrice(p.precio)}</p>

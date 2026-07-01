@@ -12,14 +12,6 @@ const REGIONES = [
   'Biobío', 'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes',
 ]
 
-const DATOS_BANCO = {
-  banco: 'Banco Estado',
-  tipo: 'Cuenta Corriente',
-  numero: '123456789',
-  rut: '12.345.678-9',
-  nombre: 'Mantis Joyas SpA',
-  email: 'pagos@mantisjoyas.cl',
-}
 
 const DESPACHO_RM = { courier: 'Paket', costo: 0, label: 'RM — Paket (24–48 hrs hábiles)' }
 const DESPACHO_REG = { courier: 'Starken', costo: 3490, label: 'Regiones — Starken (2–8 días hábiles)' }
@@ -76,10 +68,9 @@ export default function CheckoutPage() {
   const [cupon, setCupon] = useState('')
   const [descuento, setDescuento] = useState(0)
   const [cuponMsg, setCuponMsg] = useState('')
-  const [comprobante, setComprobante] = useState<File | null>(null)
-  const [errors, setErrors] = useState<Partial<Record<keyof Form | 'courier' | 'comprobante', string>>>({})
+  const [errors, setErrors] = useState<Partial<Record<keyof Form | 'courier', string>>>({})
   const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState<'form' | 'banco'>('form')
+  const [step, setStep] = useState<'form' | 'pago'>('form')
 
   const isRM = form.region === 'Metropolitana de Santiago'
   const courier = isRM ? DESPACHO_RM : (form.region ? DESPACHO_REG : null)
@@ -109,14 +100,6 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0
   }
 
-  function validateComprobante(): boolean {
-    if (!comprobante) {
-      setErrors(prev => ({ ...prev, comprobante: 'sube el comprobante' }))
-      return false
-    }
-    return true
-  }
-
   async function aplicarCupon() {
     setCuponMsg('')
     if (!cupon.trim()) return
@@ -142,13 +125,12 @@ export default function CheckoutPage() {
   function handleContinue(e: FormEvent) {
     e.preventDefault()
     if (!validate()) return
-    setStep('banco')
+    setStep('pago')
     window.scrollTo(0, 0)
   }
 
   async function handleConfirm(e: FormEvent) {
     e.preventDefault()
-    if (!validateComprobante()) return
     setLoading(true)
     try {
       const res = await fetch('/api/checkout', {
@@ -218,7 +200,7 @@ export default function CheckoutPage() {
           </span>
         </Link>
         <span style={{ fontSize: '9px', letterSpacing: '0.28em', textTransform: 'uppercase', color: '#3a6b52' }}>
-          {step === 'form' ? 'Datos de envío' : 'Transferencia bancaria'}
+          {step === 'form' ? 'Datos de envío' : 'Pago seguro con Flow'}
         </span>
       </div>
 
@@ -390,81 +372,40 @@ export default function CheckoutPage() {
               </button>
 
               <h1 style={{ fontFamily: 'var(--ff-serif)', fontSize: '38px', fontWeight: 300, color: 'var(--verde)', marginBottom: '12px' }}>
-                Transferencia bancaria
+                Confirmar y pagar
               </h1>
               <p style={{ fontSize: '13px', color: '#3a6b52', lineHeight: 1.8, marginBottom: '36px' }}>
-                Transfiere el total a la cuenta de abajo y sube el comprobante.
-                Procesamos tu pedido en menos de 2 horas hábiles.
+                Serás redirigida a Flow para completar el pago de forma segura.
+                Procesamos tu pedido en menos de 2 horas hábiles una vez confirmado.
               </p>
 
-              {/* Datos bancarios */}
+              {/* Resumen de pago con Flow */}
               <div style={{
                 background: 'var(--crema-dark)', padding: '28px 32px', marginBottom: '36px',
-                display: 'flex', flexDirection: 'column', gap: '14px',
+                display: 'flex', flexDirection: 'column', gap: '16px',
               }}>
-                {Object.entries({
-                  Banco: DATOS_BANCO.banco,
-                  'Tipo de cuenta': DATOS_BANCO.tipo,
-                  'N° de cuenta': DATOS_BANCO.numero,
-                  RUT: DATOS_BANCO.rut,
-                  Nombre: DATOS_BANCO.nombre,
-                  'Email comprobante': DATOS_BANCO.email,
-                }).map(([k, v]) => (
-                  <div key={k} className="checkout-banco-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a6b52' }}>{k}</span>
-                    <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '15px', color: 'var(--verde)' }}>{v}</span>
-                  </div>
-                ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <rect x="1.5" y="4.5" width="15" height="10" rx="1.5" stroke="#A07830" strokeWidth="1"/>
+                    <path d="M1.5 8h15" stroke="#A07830" strokeWidth="1"/>
+                    <rect x="3.5" y="10.5" width="4" height="1.5" rx="0.5" fill="#A07830"/>
+                  </svg>
+                  <span style={{ fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#3a6b52' }}>
+                    Pago seguro con Flow
+                  </span>
+                </div>
+                <p style={{ fontSize: '11px', color: '#3a6b52', lineHeight: 1.7, margin: 0 }}>
+                  Tarjeta de crédito, débito o RedCompra. Tu información de pago es procesada directamente por Flow — nunca pasa por nuestros servidores.
+                </p>
                 <div style={{ height: '0.5px', background: 'rgba(28,61,46,0.1)' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a6b52' }}>
-                    Monto a transferir
+                    Total a pagar
                   </span>
                   <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '22px', color: 'var(--dorado)' }}>
                     {formatPrice(total)}
                   </span>
                 </div>
-              </div>
-
-              {/* Subir comprobante */}
-              <div style={{ marginBottom: '32px' }}>
-                <Label error={errors.comprobante}>Comprobante de transferencia</Label>
-                <label style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: '10px', padding: '32px 24px', cursor: 'pointer',
-                  border: `0.5px dashed ${errors.comprobante ? 'rgba(192,57,43,0.5)' : 'rgba(28,61,46,0.25)'}`,
-                  background: comprobante ? 'rgba(28,61,46,0.03)' : 'transparent',
-                  transition: 'all 0.2s',
-                }}>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    style={{ display: 'none' }}
-                    onChange={e => {
-                      setComprobante(e.target.files?.[0] ?? null)
-                      setErrors(prev => ({ ...prev, comprobante: undefined }))
-                    }}
-                  />
-                  {comprobante ? (
-                    <>
-                      <span style={{ fontSize: '20px' }}>✓</span>
-                      <span style={{ fontSize: '12px', color: 'var(--verde)' }}>{comprobante.name}</span>
-                      <span style={{ fontSize: '10px', color: '#3a6b52', letterSpacing: '0.1em' }}>
-                        Clic para cambiar
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ fontSize: '24px', opacity: 0.3 }}>↑</span>
-                      <span style={{ fontSize: '12px', color: '#3a6b52', letterSpacing: '0.06em' }}>
-                        Subir comprobante
-                      </span>
-                      <span style={{ fontSize: '10px', color: '#3a6b52', opacity: 0.6 }}>
-                        JPG, PNG o PDF
-                      </span>
-                    </>
-                  )}
-                </label>
               </div>
 
               <button
@@ -478,11 +419,11 @@ export default function CheckoutPage() {
                   opacity: loading ? 0.7 : 1, width: '100%', transition: 'all 0.2s',
                 }}
               >
-                {loading ? 'Enviando...' : 'Confirmar pedido →'}
+                {loading ? 'Redirigiendo...' : `Pagar ${formatPrice(total)} con Flow →`}
               </button>
 
               <p style={{ marginTop: '16px', fontSize: '10px', color: '#3a6b52', textAlign: 'center', letterSpacing: '0.06em', lineHeight: 1.7 }}>
-                Al confirmar recibirás un certificado de garantía por email.
+                Al confirmar recibirás un email con los detalles de tu pedido.
               </p>
             </form>
           )}
@@ -496,7 +437,14 @@ export default function CheckoutPage() {
 
           <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {items.map(({ product, variante, cantidad, desglose }) => (
-              <div key={product.id + (variante ?? '')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '12px' }}>
+              <div key={product.id + (variante ?? '')} style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
+                {/* Thumbnail */}
+                <div style={{ width: '52px', height: '52px', background: 'var(--crema)', flexShrink: 0, overflow: 'hidden' }}>
+                  {product.imagen_url
+                    ? <img src={product.imagen_url} alt={product.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    : <div style={{ width: '100%', height: '100%', background: 'var(--crema)' }} />
+                  }
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '13px', color: 'var(--verde)', marginBottom: '4px' }}>{product.nombre}</div>
                   {desglose ? (
@@ -575,7 +523,7 @@ export default function CheckoutPage() {
           </div>
 
           <p style={{ fontSize: '10px', color: '#3a6b52', textAlign: 'center', letterSpacing: '0.06em', lineHeight: 1.6, marginTop: 'auto' }}>
-            Pago por transferencia bancaria<br />
+            Pago seguro con Flow — tarjeta de crédito, débito o RedCompra<br />
             48h desde la recepción para reportar defectos de fabricación
           </p>
         </div>

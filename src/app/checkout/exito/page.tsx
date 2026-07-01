@@ -118,7 +118,7 @@ export default async function ExitoPage({ searchParams }: Props) {
         opacity: 0.75,
       }}>
         Cuando tu pedido sea despachado, recibirás otro email con el número de seguimiento.
-        Nos tomará entre 1 y 2 días hábiles procesar tu transferencia.
+        Lo prepararemos con mucho cuidado en 1 a 2 días hábiles.
       </p>
 
       {modo === 'dev' && (

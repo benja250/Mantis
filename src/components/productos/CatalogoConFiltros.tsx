@@ -117,7 +117,7 @@ export default function CatalogoConFiltros({ products }: Props) {
           </>
         )}
 
-        <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#3a6b52', opacity: 0.5 }}>
+        <span style={{ fontSize: '11px', color: '#3a6b52', opacity: 0.5 }}>
           {filtrados.length} {filtrados.length === 1 ? 'producto' : 'productos'}
         </span>
       </div>

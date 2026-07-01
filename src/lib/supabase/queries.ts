@@ -66,7 +66,7 @@ export async function getProductoBySlug(slug: string): Promise<ProductDetail | n
     .from('productos')
     .select(`
       id, slug, nombre, descripcion_corta, descripcion,
-      precio, precio_comparar, badge, material,
+      precio, precio_comparar, badge, material, imagen_url,
       categorias(nombre, slug),
       imagenes_producto(id, url, alt, es_principal, orden),
       variantes(id, nombre, stock, activa)
@@ -94,6 +94,9 @@ export async function getProductoBySlug(slug: string): Promise<ProductDetail | n
     orden: img.orden ?? 0,
   }))
 
+  const fromJoin = imagenPrincipal(allImagenes)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const directUrl = (data as any).imagen_url as string | null | undefined
   return {
     id: data.id,
     slug: data.slug,
@@ -108,7 +111,8 @@ export async function getProductoBySlug(slug: string): Promise<ProductDetail | n
     categoria_slug: cat?.slug ?? '',
     variantes,
     imagenes,
-    ...imagenPrincipal(allImagenes),
+    imagen_url: fromJoin.imagen_url ?? directUrl ?? undefined,
+    imagen_alt: fromJoin.imagen_alt,
   }
 }
 
@@ -117,7 +121,7 @@ export async function getProductosDestacados(): Promise<Product[]> {
 
   const { data, error } = await supabase
     .from('productos')
-    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagenes_producto(url, alt, es_principal)')
+    .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, imagenes_producto(url, alt, es_principal)')
     .eq('activo', true)
     .eq('destacado', true)
     .order('orden', { ascending: true })
@@ -125,17 +129,23 @@ export async function getProductosDestacados(): Promise<Product[]> {
 
   if (error) throw error
 
-  return (data ?? []).map(p => ({
-    id: p.id,
-    slug: p.slug,
-    nombre: p.nombre,
-    descripcion_corta: p.descripcion_corta,
-    precio: p.precio,
-    precio_comparar: p.precio_comparar ?? undefined,
-    badge: p.badge ?? undefined,
-    material: p.material ?? undefined,
-    ...imagenPrincipal((p.imagenes_producto ?? []) as ImagenRow[]),
-  }))
+  return (data ?? []).map(p => {
+    const fromJoin = imagenPrincipal((p.imagenes_producto ?? []) as ImagenRow[])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const directUrl = (p as any).imagen_url as string | null | undefined
+    return {
+      id: p.id,
+      slug: p.slug,
+      nombre: p.nombre,
+      descripcion_corta: p.descripcion_corta,
+      precio: p.precio,
+      precio_comparar: p.precio_comparar ?? undefined,
+      badge: p.badge ?? undefined,
+      material: p.material ?? undefined,
+      imagen_url: fromJoin.imagen_url ?? directUrl ?? undefined,
+      imagen_alt: fromJoin.imagen_alt,
+    }
+  })
 }
 
 // ─── Órdenes ──────────────────────────────────────────────────────────────────

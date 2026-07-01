@@ -1,5 +1,7 @@
 'use client'
 
+import { createPortal } from 'react-dom'
+
 const TALLAS = [
   { id: 'S',  largo: '16 cm', muneca: '14–15 cm', para: 'Muñecas pequeñas' },
   { id: 'M',  largo: '17 cm', muneca: '15–16 cm', para: 'Talla más vendida' },
@@ -8,7 +10,7 @@ const TALLAS = [
 ]
 
 export default function GuiaTallasModal({ onClose }: { onClose: () => void }) {
-  return (
+  return createPortal(
     <div
       onClick={onClose}
       style={{
@@ -93,6 +95,7 @@ export default function GuiaTallasModal({ onClose }: { onClose: () => void }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

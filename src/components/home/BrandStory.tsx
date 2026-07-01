@@ -31,8 +31,8 @@ export default function BrandStory() {
           <path d="M5 6V5a3 3 0 016 0v1" stroke="#A07830" strokeWidth="1" strokeLinecap="round" />
         </svg>
       ),
-      title: 'Pago por transferencia bancaria',
-      desc: 'Simple, directo y seguro',
+      title: 'Pago seguro con Flow',
+      desc: 'Tarjeta de crédito, débito o RedCompra',
     },
     {
       icon: (

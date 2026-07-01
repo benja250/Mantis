@@ -115,7 +115,7 @@ export default function DespachoPage() {
           },
           {
             title: 'Plazos',
-            text: 'Desde confirmación de transferencia. Lunes a viernes, días hábiles.',
+            text: 'Desde confirmación del pago. Lunes a viernes, días hábiles.',
           },
         ].map(({ title, text }) => (
           <div key={title} style={{ background: 'var(--crema)', padding: '20px' }}>

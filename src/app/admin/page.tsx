@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, type FormEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Section = 'productos' | 'ordenes' | 'inventario' | 'cupones' | 'notificaciones' | 'resenas' | 'acceso'
+type Section = 'productos' | 'ordenes' | 'inventario' | 'edicion' | 'cupones' | 'notificaciones' | 'resenas' | 'acceso'
 
 type PanelMode =
   | { type: 'nuevo-producto' }
@@ -415,7 +415,7 @@ function SeccionOrdenes({ onSetAction, onAbrirPanel, showToast }: {
     <>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1px', background:'rgba(28,61,46,.08)', marginBottom:'22px' }}>
         <StatCard num={activas.length} label="Órdenes activas" />
-        <StatCard num={pend} label="Esperando transferencia" warn={pend > 0} />
+        <StatCard num={pend} label="Pendientes de pago" warn={pend > 0} />
         <StatCard num={fmt(tot)} label="Ingresos totales" />
       </div>
 
@@ -902,6 +902,327 @@ function SeccionResenas({ onSetAction, showToast }: {
   )
 }
 
+// ── Sección Edición ───────────────────────────────────────────────────────────
+
+const COL_W = 280
+const COL_H = Math.round(COL_W * 620 / 700)
+const OUT_W = 1400
+const OUT_H = Math.round(OUT_W * 620 / 700)
+
+function MiniHeroPreview({
+  images,
+  overrideRight,
+  rightEvents,
+}: {
+  images: Array<{ url: string }>
+  overrideRight?: { src: string; posX: number; posY: number; dragging: boolean } | null
+  rightEvents?: { onMouseDown: (e: React.MouseEvent) => void; onMouseMove: (e: React.MouseEvent) => void; onStop: () => void }
+}) {
+  const [idx, setIdx] = useState(0)
+  const isInteractive = !!overrideRight
+
+  useEffect(() => {
+    if (isInteractive || images.length <= 1) return
+    const t = setInterval(() => setIdx(i => (i + 1) % images.length), 6000)
+    return () => clearInterval(t)
+  }, [images.length, isInteractive])
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `${COL_W}px ${COL_W}px`, height: COL_H, border: '0.5px solid rgba(28,61,46,0.15)', overflow: 'hidden' }}>
+      {/* Columna izquierda: texto estático */}
+      <div style={{ background: 'var(--crema)', padding: '14px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ fontSize: '6px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--dorado)', marginBottom: '5px', opacity: 0.8 }}>
+          Bañadas en oro 18k
+        </div>
+        <div style={{ fontFamily: 'var(--ff-serif)', fontSize: '14px', fontWeight: 300, color: 'var(--verde)', lineHeight: 1.05, marginBottom: '10px' }}>
+          Pequeños<br />detalles,<br /><em style={{ color: 'var(--dorado)', fontStyle: 'italic' }}>grandes</em><br />momentos.
+        </div>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={{ background: 'var(--verde)', color: 'var(--crema)', padding: '3px 6px', fontSize: '5px', letterSpacing: '0.1em', fontFamily: 'var(--ff-sans)' }}>VER COLECCIÓN</div>
+          <div style={{ border: '0.5px solid var(--verde)', color: 'var(--verde)', padding: '3px 6px', fontSize: '5px', letterSpacing: '0.1em', fontFamily: 'var(--ff-sans)' }}>CREA TU PULSERA</div>
+        </div>
+      </div>
+      {/* Columna derecha: fotos o área de recorte */}
+      <div
+        style={{
+          background: 'var(--crema-dark)', position: 'relative', overflow: 'hidden',
+          cursor: isInteractive ? (overrideRight?.dragging ? 'grabbing' : 'grab') : undefined,
+          userSelect: 'none',
+          ...(overrideRight ? {
+            backgroundImage: `url(${overrideRight.src})`,
+            backgroundSize: 'cover',
+            backgroundPosition: `${overrideRight.posX}% ${overrideRight.posY}%`,
+          } : {}),
+        }}
+        onMouseDown={rightEvents?.onMouseDown}
+        onMouseMove={rightEvents?.onMouseMove}
+        onMouseUp={rightEvents?.onStop}
+        onMouseLeave={rightEvents?.onStop}
+      >
+        {!isInteractive && images.map((img, i) => (
+          <div key={img.url} style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${img.url})`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            opacity: i === idx ? 1 : 0, transition: 'opacity 0.9s ease-in-out',
+          }} />
+        ))}
+        {!isInteractive && images.length === 0 && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: 'var(--ff-serif)', fontSize: '9px', color: 'var(--verde)', opacity: 0.3 }}>Sin fotos</span>
+          </div>
+        )}
+        {!isInteractive && images.length > 1 && (
+          <div style={{ position: 'absolute', bottom: '6px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '3px', zIndex: 2 }}>
+            {images.map((_, i) => (
+              <div key={i} style={{ width: '3px', height: '3px', borderRadius: '50%', background: i === idx ? 'rgba(245,240,232,0.9)' : 'rgba(245,240,232,0.35)' }} />
+            ))}
+          </div>
+        )}
+        <div style={{ position: 'absolute', bottom: '4px', right: '4px', fontSize: '5px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(28,61,46,0.9)', background: 'rgba(245,240,232,0.55)', padding: '2px 4px', zIndex: 3 }}>
+          Nueva colección 2026
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SeccionEdicion({ onSetAction }: { onSetAction: (el: React.ReactNode) => void }) {
+  useEffect(() => { onSetAction(null); return () => onSetAction(null) }, [onSetAction])
+
+  const [uploading, setUploading] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null)
+  const [images, setImages] = useState<Array<{ name: string; url: string }>>([])
+
+  const [step, setStep] = useState<'list' | 'crop'>('list')
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [editingName, setEditingName] = useState<string | null>(null)
+  const [pos, setPos] = useState({ x: 50, y: 50 })
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
+  const [dragging, setDragging] = useState(false)
+  const dragStart = useRef({ mx: 0, my: 0, px: 50, py: 50 })
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function loadImages() {
+    const sb = createClient()
+    const { data: files } = await sb.storage.from('productos').list('general')
+    if (!files) return
+    const heroFiles = files.filter(f => f.name.startsWith('hero')).sort((a, b) => a.name.localeCompare(b.name))
+    const v = Date.now()
+    setImages(heroFiles.map(f => ({
+      name: f.name,
+      url: sb.storage.from('productos').getPublicUrl(`general/${f.name}`).data.publicUrl + '?v=' + v,
+    })))
+  }
+
+  useEffect(() => { loadImages() }, [])
+
+  function openFilePicker(name?: string) {
+    setEditingName(name ?? null)
+    if (fileInputRef.current) { fileInputRef.current.value = ''; fileInputRef.current.click() }
+  }
+
+  function handleFileSelect(f: File) {
+    if (f.size > 12 * 1024 * 1024) { setMsg({ text: 'Máx 12MB', error: true }); return }
+    setCropFile(f)
+    setCropSrc(URL.createObjectURL(f))
+    setPos({ x: 50, y: 50 })
+    setImgSize({ w: 0, h: 0 })
+    setMsg(null)
+    setStep('crop')
+  }
+
+  function handleMouseDown(e: React.MouseEvent) {
+    setDragging(true)
+    dragStart.current = { mx: e.clientX, my: e.clientY, px: pos.x, py: pos.y }
+    e.preventDefault()
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    if (!dragging || !imgSize.w) return
+    const scale = Math.max(COL_W / imgSize.w, COL_H / imgSize.h)
+    const overflowX = imgSize.w * scale - COL_W
+    const overflowY = imgSize.h * scale - COL_H
+    const dx = e.clientX - dragStart.current.mx
+    const dy = e.clientY - dragStart.current.my
+    const newX = overflowX > 0 ? Math.max(0, Math.min(100, dragStart.current.px - (dx / overflowX) * 100)) : 50
+    const newY = overflowY > 0 ? Math.max(0, Math.min(100, dragStart.current.py - (dy / overflowY) * 100)) : 50
+    setPos({ x: newX, y: newY })
+  }
+
+  async function handleUploadCropped() {
+    if (!cropSrc || !cropFile) return
+    setUploading(true); setMsg(null)
+
+    const img = new Image()
+    img.src = cropSrc
+    await new Promise<void>(r => { img.onload = () => r() })
+
+    const scale = Math.max(OUT_W / img.width, OUT_H / img.height)
+    const scaledW = img.width * scale
+    const scaledH = img.height * scale
+    const canvas = document.createElement('canvas')
+    canvas.width = OUT_W; canvas.height = OUT_H
+    canvas.getContext('2d')!.drawImage(img, -(scaledW - OUT_W) * (pos.x / 100), -(scaledH - OUT_H) * (pos.y / 100), scaledW, scaledH)
+
+    const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.92))
+    if (!blob) { setMsg({ text: 'Error al procesar imagen', error: true }); setUploading(false); return }
+
+    const sb = createClient()
+    let targetPath: string
+    if (editingName) {
+      targetPath = `general/${editingName}`
+    } else {
+      const { data: files } = await sb.storage.from('productos').list('general')
+      targetPath = `general/hero-${(files ?? []).filter(f => f.name.startsWith('hero')).length}.jpg`
+    }
+
+    const { error } = await sb.storage.from('productos').upload(targetPath, blob, { upsert: true, contentType: 'image/jpeg' })
+    if (error) { setMsg({ text: 'Error: ' + error.message, error: true }); setUploading(false); return }
+
+    setMsg({ text: editingName ? 'Foto actualizada.' : 'Foto agregada.', error: false })
+    setUploading(false); setStep('list'); setEditingName(null); setCropSrc(null); setCropFile(null)
+    await loadImages()
+  }
+
+  async function handleDelete(name: string) {
+    setDeleting(name); setMsg(null)
+    const res = await fetch('/api/admin/hero', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+    const json = await res.json()
+    if (!res.ok) { setMsg({ text: 'Error al eliminar: ' + (json.error ?? res.status), error: true }); setDeleting(null); return }
+    setMsg({ text: 'Imagen eliminada.', error: false }); setDeleting(null)
+    await loadImages()
+  }
+
+  function cancelCrop() {
+    setStep('list'); setEditingName(null); setCropSrc(null); setCropFile(null)
+  }
+
+  const fileInput = (
+    <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+      onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f) }} />
+  )
+
+  const msgEl = msg && (
+    <div style={{ padding: '10px 14px', marginTop: '16px', background: msg.error ? 'rgba(192,57,43,0.08)' : 'rgba(28,61,46,0.08)', border: `0.5px solid ${msg.error ? 'rgba(192,57,43,0.3)' : 'rgba(28,61,46,0.2)'}`, fontSize: '12px', color: msg.error ? '#C0392B' : 'var(--verde)' }}>
+      {msg.text}
+    </div>
+  )
+
+  // ── Vista recorte ─────────────────────────────────────────────────────────────
+  if (step === 'crop' && cropSrc) {
+    return (
+      <div>
+        {fileInput}
+        <div style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '20px' }}>
+          {editingName ? `Editando ${editingName}` : 'Nueva foto — ajustar encuadre'}
+        </div>
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+          {/* Imagen original */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '10px', color: '#3a6b52', marginBottom: '8px', opacity: 0.7 }}>Imagen original</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={cropSrc} alt="original"
+              onLoad={e => { const el = e.target as HTMLImageElement; setImgSize({ w: el.naturalWidth, h: el.naturalHeight }) }}
+              style={{ width: '100%', height: 'auto', display: 'block', border: '0.5px solid rgba(28,61,46,0.12)' }} />
+            {imgSize.w > 0 && (
+              <div style={{ fontSize: '10px', color: '#3a6b52', marginTop: '6px', opacity: 0.5 }}>{imgSize.w} × {imgSize.h} px</div>
+            )}
+          </div>
+          {/* Mini hero interactivo */}
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ fontSize: '10px', color: '#3a6b52', marginBottom: '8px', opacity: 0.7 }}>
+              Vista previa — arrastra la foto para encuadrar
+            </div>
+            <MiniHeroPreview
+              images={[]}
+              overrideRight={{ src: cropSrc, posX: pos.x, posY: pos.y, dragging }}
+              rightEvents={{ onMouseDown: handleMouseDown, onMouseMove: handleMouseMove, onStop: () => setDragging(false) }}
+            />
+            <div style={{ fontSize: '9px', color: '#3a6b52', marginTop: '6px', opacity: 0.45 }}>La foto ocupa el lado derecho del hero</div>
+          </div>
+        </div>
+        {msgEl}
+        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+          <button onClick={cancelCrop} style={{ background: 'none', border: '0.5px solid rgba(28,61,46,0.3)', color: 'var(--verde)', padding: '11px 24px', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)', cursor: 'pointer' }}>
+            Cancelar
+          </button>
+          <button onClick={handleUploadCropped} disabled={uploading || !imgSize.w}
+            style={{ background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '12px 28px', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)', cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}>
+            {uploading ? 'Subiendo…' : editingName ? 'Guardar cambios' : 'Subir foto'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Vista lista ───────────────────────────────────────────────────────────────
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '48px', alignItems: 'start' }}>
+      {fileInput}
+
+      {/* Panel izquierdo */}
+      <div>
+        <div style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '6px' }}>
+          Fotos hero — inicio (lado derecho)
+        </div>
+        <p style={{ fontSize: '12px', color: '#3a6b52', lineHeight: 1.7, marginBottom: '20px' }}>
+          Sube fotos para el carrusel. Haz clic en una foto para cambiar su encuadre.
+        </p>
+
+        {images.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+            {images.map(img => (
+              <div key={img.name}>
+                <div style={{ position: 'relative' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt={img.name} onClick={() => openFilePicker(img.name)} title="Clic para cambiar foto"
+                    style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block', border: '0.5px solid rgba(28,61,46,0.12)', cursor: 'pointer' }} />
+                  <button onClick={() => handleDelete(img.name)} disabled={deleting === img.name}
+                    style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(192,57,43,0.85)', color: 'white', border: 'none', borderRadius: '2px', width: '22px', height: '22px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: deleting === img.name ? 0.5 : 1 }}>
+                    ×
+                  </button>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '9px', color: '#3a6b52', opacity: 0.5 }}>{img.name}</span>
+                  <button onClick={() => openFilePicker(img.name)} style={{ fontSize: '9px', color: 'var(--dorado)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Cambiar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {images.length === 0 && (
+          <div style={{ padding: '32px', background: 'var(--crema-dark)', marginBottom: '24px', textAlign: 'center', fontSize: '12px', color: '#3a6b52', opacity: 0.6 }}>
+            Sin fotos — se muestra la ilustración por defecto
+          </div>
+        )}
+
+        {msgEl}
+
+        <button onClick={() => openFilePicker()} disabled={uploading}
+          style={{ marginTop: msg ? '16px' : 0, background: 'var(--verde)', color: 'var(--crema)', border: 'none', padding: '12px 28px', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'var(--ff-sans)', cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}>
+          + Agregar foto
+        </button>
+        <p style={{ marginTop: '10px', fontSize: '11px', color: '#3a6b52', opacity: 0.7 }}>JPG o PNG · Máx 12MB</p>
+      </div>
+
+      {/* Panel derecho: preview del hero */}
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#3a6b52', marginBottom: '8px' }}>
+          Vista previa del hero
+        </div>
+        <MiniHeroPreview images={images} />
+        <div style={{ fontSize: '9px', color: '#3a6b52', marginTop: '6px', opacity: 0.45 }}>
+          Se actualiza al subir o eliminar fotos
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Sección Acceso ────────────────────────────────────────────────────────────
 
 function SeccionAcceso({ onSetAction, user }: { onSetAction: (el: React.ReactNode) => void; user: User }) {
@@ -915,6 +1236,7 @@ function SeccionAcceso({ onSetAction, user }: { onSetAction: (el: React.ReactNod
   const [confirmar, setConfirmar] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null)
+
 
   async function handleCambiar(e: FormEvent) {
     e.preventDefault()
@@ -993,6 +1315,7 @@ function SeccionAcceso({ onSetAction, user }: { onSetAction: (el: React.ReactNod
           </div>
         </form>
       )}
+
     </div>
   )
 }
@@ -1639,13 +1962,14 @@ function PanelBody({
 
 const SECTION_LABELS: Record<Section, string> = {
   productos: 'Productos', ordenes: 'Órdenes', inventario: 'Inventario',
-  cupones: 'Cupones', notificaciones: 'Notificaciones', resenas: 'Reseñas', acceso: 'Acceso al panel',
+  edicion: 'Edición', cupones: 'Cupones', notificaciones: 'Notificaciones', resenas: 'Reseñas', acceso: 'Acceso al panel',
 }
 
 const NAV_ICONS: Record<Section, React.ReactNode> = {
   productos: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x=".8" y=".8" width="5.4" height="5.4" rx=".7" stroke="currentColor" strokeWidth="1.1"/><rect x="7.8" y=".8" width="5.4" height="5.4" rx=".7" stroke="currentColor" strokeWidth="1.1"/><rect x=".8" y="7.8" width="5.4" height="5.4" rx=".7" stroke="currentColor" strokeWidth="1.1"/><rect x="7.8" y="7.8" width="5.4" height="5.4" rx=".7" stroke="currentColor" strokeWidth="1.1"/></svg>,
   ordenes:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.1"/><line x1="4" y1="4.5" x2="10" y2="4.5" stroke="currentColor" strokeWidth="1"/><line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" strokeWidth="1"/><line x1="4" y1="9.5" x2="7.5" y2="9.5" stroke="currentColor" strokeWidth="1"/></svg>,
   inventario:<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L13 4.5v5L7 13 1 9.5v-5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M7 1v12M1 4.5l6 3.5L13 4.5" stroke="currentColor" strokeWidth="1.1"/></svg>,
+  edicion:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="9" height="11" rx="1" stroke="currentColor" strokeWidth="1.1"/><path d="M9 1.5v3l1.5-1.5L12 4.5V1.5" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/><line x1="4" y1="6" x2="8" y2="6" stroke="currentColor" strokeWidth="1"/><line x1="4" y1="8.5" x2="7" y2="8.5" stroke="currentColor" strokeWidth="1"/></svg>,
   cupones:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8 1.5H13V6.5L7 12.5a1.4 1.4 0 01-2 0L1 8.5a1.4 1.4 0 010-2L7 1.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><circle cx="10.5" cy="4" r=".9" fill="currentColor"/></svg>,
   notificaciones:<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a4 4 0 014 4v2l1 2H2l1-2v-2a4 4 0 014-4z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" strokeWidth="1.1"/></svg>,
   resenas:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l1.6 3.2 3.5.5-2.5 2.4.6 3.5L7 9.5l-3.2 1.6.6-3.5-2.5-2.4 3.5-.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/></svg>,
@@ -1701,7 +2025,7 @@ function AdminShell({ user, onLogout }: { user: User; onLogout: () => void }) {
         </div>
 
         <nav style={{ flex:1, paddingBottom:'8px' }}>
-          {(['productos','ordenes','inventario','cupones','notificaciones','resenas'] as Section[]).map(id => (
+          {(['productos','ordenes','inventario','edicion','cupones','notificaciones','resenas'] as Section[]).map(id => (
             <button
               key={id}
               onClick={() => setSection(id)}
@@ -1765,6 +2089,7 @@ function AdminShell({ user, onLogout }: { user: User; onLogout: () => void }) {
           {section === 'productos'      && <SeccionProductos   key={`p-${refreshKey}`} {...sectionProps} />}
           {section === 'ordenes'        && <SeccionOrdenes     key={`o-${refreshKey}`} {...sectionProps} />}
           {section === 'inventario'     && <SeccionInventario  key={`i-${refreshKey}`} {...sectionProps} />}
+          {section === 'edicion'        && <SeccionEdicion     key="ed" onSetAction={setTopbarAction} />}
           {section === 'cupones'        && <SeccionCupones     key={`c-${refreshKey}`} {...sectionProps} />}
           {section === 'notificaciones' && <SeccionNotificaciones key={`n-${refreshKey}`} onSetAction={setTopbarAction} />}
           {section === 'resenas'        && <SeccionResenas key={`r-${refreshKey}`} onSetAction={setTopbarAction} showToast={showToast} />}

@@ -12,7 +12,7 @@ interface Estado {
 }
 
 const ESTADOS: Record<Estado['estado'], { label: string; desc: string }> = {
-  pendiente:   { label: 'Pendiente de pago',  desc: 'Esperando confirmación de transferencia.' },
+  pendiente:   { label: 'Pendiente de pago',  desc: 'Esperando confirmación del pago.' },
   confirmado:  { label: 'Pago confirmado',    desc: 'Tu pago fue recibido. Preparando tu pedido.' },
   procesando:  { label: 'Preparando pedido',  desc: 'Tu joya está siendo empacada con cuidado.' },
   despachado:  { label: 'En camino',          desc: 'Tu pedido ya fue despachado.' },

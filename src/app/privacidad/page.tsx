@@ -3,21 +3,21 @@ export default function PrivacidadPage() {
     <main>
       <div style={{
         padding: '80px 48px 60px',
-        background: 'var(--crema-dark)',
-        borderBottom: '0.5px solid rgba(28,61,46,0.1)',
+        background: 'var(--verde)',
+        borderBottom: '0.5px solid rgba(245,240,232,0.08)',
       }}>
         <div style={{
           fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: 'var(--dorado)', marginBottom: '20px',
+          color: 'var(--dorado-pale)', marginBottom: '20px',
         }}>
           Legal
         </div>
         <h1 style={{
-          fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300, color: 'var(--verde)',
+          fontFamily: 'var(--ff-serif)', fontSize: '52px', fontWeight: 300, color: 'var(--crema)',
         }}>
           Política de privacidad<br />y términos de uso
         </h1>
-        <p style={{ marginTop: '16px', fontSize: '11px', color: '#3a6b52', letterSpacing: '0.06em' }}>
+        <p style={{ marginTop: '16px', fontSize: '11px', color: 'rgba(245,240,232,0.5)', letterSpacing: '0.06em' }}>
           Última actualización: junio de 2026
         </p>
       </div>
@@ -38,7 +38,7 @@ export default function PrivacidadPage() {
           },
           {
             title: '4. Seguridad',
-            body: `Protegemos tus datos con medidas de seguridad razonables. Las transferencias bancarias se realizan directamente al banco — nunca almacenamos datos de tarjetas.`,
+            body: `Protegemos tus datos con medidas de seguridad razonables. Los pagos son procesados de forma segura por Flow — nunca almacenamos datos de tarjetas ni información financiera en nuestros servidores.`,
           },
           {
             title: '5. Cookies',

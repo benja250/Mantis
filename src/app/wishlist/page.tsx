@@ -24,7 +24,7 @@ export default function WishlistPage() {
       const sb = createClient()
       const { data } = await sb
         .from('productos')
-        .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagenes_producto(url, alt, es_principal)')
+        .select('id, slug, nombre, descripcion_corta, precio, precio_comparar, badge, material, imagen_url, imagenes_producto(url, alt, es_principal)')
         .in('id', ids)
         .eq('activo', true)
 
@@ -32,6 +32,8 @@ export default function WishlistPage() {
       const mapped: Product[] = (data ?? []).map(p => {
         const imgs = (p.imagenes_producto ?? []) as ImagenRow[]
         const img = imgs.find(i => i.es_principal) ?? imgs[0]
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const directUrl = (p as any).imagen_url as string | null | undefined
         return {
           id: p.id,
           slug: p.slug,
@@ -41,7 +43,7 @@ export default function WishlistPage() {
           precio_comparar: p.precio_comparar ?? undefined,
           badge: p.badge ?? undefined,
           material: p.material ?? undefined,
-          imagen_url: img?.url,
+          imagen_url: img?.url ?? directUrl ?? undefined,
           imagen_alt: img?.alt ?? undefined,
         }
       })
@@ -100,7 +102,7 @@ export default function WishlistPage() {
             {products.map(p => (
               <div key={p.id} style={{ background: 'var(--crema)', position: 'relative' }}>
                 <div style={{
-                  aspectRatio: '1', background: 'var(--crema-dark)',
+                  aspectRatio: '1', background: 'var(--crema)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   position: 'relative', overflow: 'hidden',
                 }}>
