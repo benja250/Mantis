@@ -1406,7 +1406,7 @@ function PanelBody({
       badge: pBadge || null,
       descripcion_corta: pDesc.trim() || null,
       activo: pActivo,
-      ...(pImagenUrl ? { imagen_url: pImagenUrl } : {}),
+      ...((pImagenUrl || pPreviewUrl) ? { imagen_url: pImagenUrl || pPreviewUrl } : {}),
     }
     console.log('[admin] guardarProducto payload:', JSON.stringify(payload))
     if (m.type === 'editar-producto') {
@@ -1700,7 +1700,7 @@ function PanelBody({
                 url={pImagenUrl}
                 uploading={uploadingMain}
                 onChange={uploadMain}
-                hint="JPG o WEBP · Máx 5MB"
+                hint="JPG, PNG o WEBP · Máx 5MB"
               />
               <ZonaImagen
                 label="Imagen preview (sin fondo PNG — para preview de pulsera)"
